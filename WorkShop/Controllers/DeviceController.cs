@@ -228,6 +228,7 @@ namespace WorkShop.Controllers
 
                 if (device == null)
                     if (device == null) return NotFound();
+
                 var spareRequest = device.SparePartRequests.SelectMany(r => r.Items).ToList();
                 var availableStores = _unitOfWork.stores.FindAll()
                                     .Where(s => s.DepartmentId == currentUser.DepartmentId)
@@ -247,6 +248,12 @@ namespace WorkShop.Controllers
                     {
                         DeviceId = device.Id,
                         DeviceSerialNumber = device.SerialNumber,
+                        IsFinalized = device.SparePartRequests
+                    .OrderByDescending(r => r.Id)
+                    .FirstOrDefault()?.IsFinalized ?? false,
+                        Status = device.SparePartRequests
+                    .OrderByDescending(r => r.Id)
+                    .FirstOrDefault()?.Status ?? "",
                         Items = spareRequest.Any()
                                 ? spareRequest.Select(i => new SparePartItemViewModel
                                 {
@@ -309,7 +316,9 @@ namespace WorkShop.Controllers
             var selectedItems = model.SparePartRequest?.Items ?? new List<SparePartItemViewModel>();
             bool hasParts = model.RequestSpareParts && selectedItems.Any(i => i.Quantity > 0);
 
-            if (model.RequestSpareParts && model.SparePartRequest.Items != null && model.SparePartRequest.Items.Any())
+            if (model.RequestSpareParts &&
+                 model.SparePartRequest.Items != null &&
+                 model.SparePartRequest.Items.Any(i => i.Quantity > 0))
             {
 
                 // هل يوجد طلب سابق؟
@@ -647,13 +656,14 @@ namespace WorkShop.Controllers
             var device = _unitOfWork.devices.FindById(Id);
             var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
             var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
+            var Officer = await _userManager.GetUserAsync(User);
             if (device == null || card == null || request == null) return NotFound();
 
             device.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
             request.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
+            request.ManagerId = Officer.Id;
             card.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
            
-            var Officer = await _userManager.GetUserAsync(User);
             await _unitOfWork.deviceLogs.AddAsync(
                 new DeviceLogs
                 {
@@ -1044,7 +1054,8 @@ namespace WorkShop.Controllers
                 var product = _unitOfWork.productStoks.FindAll().SingleOrDefault(p => p.productId == item.ProductId && p.storeId == item.StoreId);
                 if (product == null || product.quantity < item.Quantity)
                 {
-                    return BadRequest($"{item.StoreId}---{product?.storeId}المخزون غير كافٍ");
+                    TempData["Massege"] = "القطع غير متوفرة او غير كافية  ";
+                    return RedirectToAction("PendingDeliveries");
 
                 }
 
@@ -1052,8 +1063,39 @@ namespace WorkShop.Controllers
 
             }//end for ech
 
-
             request.Status = MaintenanceStatus.Delivered.ToString();
+            request.IsFinalized = true;
+            var StoreKeeper = await _userManager.GetUserAsync(User);
+            await _unitOfWork.deviceLogs.AddAsync(
+                new DeviceLogs
+                {
+
+                    Notes = "تم صرف  قطع الغيار",
+                    DeviceId = request.DeviceId,
+                    Action = "تم صرف  ",
+                    status = request.Status,
+                    description = "تم صرف  طلب قطع الغيار من قبل امين المستودع",
+                    userId = StoreKeeper.Id,
+                    Role = "StoreKeeper",
+                    CreatedAt = DateTime.Now
+                });
+
+            _unitOfWork.notifications.Insert(new Notification
+            {
+                Title = "تم صرف  قطع الغيار",
+                Message = "تم صرف  طلب قطع الغيار من قبل امين المستودع",
+                ReceiverId = request.RequestedById,
+                CreatedAt = DateTime.Now
+            });
+
+            _unitOfWork.notifications.Insert(new Notification
+            {
+                Title = "تم صرف  قطع الغيار",
+                Message = "تم صرف  قطع الغيار",
+                ReceiverId = request.ManagerId,
+                CreatedAt = DateTime.Now
+            });
+
             await _unitOfWork.CompleteAsync();
 
             TempData["Success"] = "تم صرف القطع بنجاح.";

@@ -10,6 +10,7 @@ namespace WorkShop.ViewModel
 
         public string? DeviceSerialNumber { get; set; } // لعرض السيريال في الفورم فقط
         public string Status { get; set; }
+        public bool IsFinalized { get; set; }
         public List<SelectListItem> Products { get; set; } = new List<SelectListItem>();
 
         public List<SparePartItemViewModel> Items { get; set; } = new List<SparePartItemViewModel>();
