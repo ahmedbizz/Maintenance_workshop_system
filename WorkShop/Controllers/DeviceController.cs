@@ -316,9 +316,7 @@ namespace WorkShop.Controllers
                 var existingRequest = _unitOfWork.sparePartRequests
                     .FindAll("Items")
                     .FirstOrDefault(r => r.DeviceId == model.DeviceId &&
-                                            r.Status == MaintenanceStatus.Pending.ToString() ||
-                                            r.Status == MaintenanceStatus.RejectedByEngineer.ToString() ||
-                                            r.Status == MaintenanceStatus.RejectedByOfficer.ToString());
+                                            r.Status != MaintenanceStatus.Delivered.ToString());
 
                 if (existingRequest != null)
                 {
@@ -412,9 +410,20 @@ namespace WorkShop.Controllers
                 }
             }
 
+   
             // في حال تم الإصلاح بدون قطع
             if (model.IsRepaired && !hasParts)
             {
+                var existingRequest = _unitOfWork.sparePartRequests
+                    .FindAll("Items")
+                    .FirstOrDefault(r => r.DeviceId == model.DeviceId && r.Status != MaintenanceStatus.Delivered.ToString());
+
+                if (existingRequest != null && existingRequest.Items.Any())
+                {
+                    TempData["Massege"] = "كرت الصيانة يحتوي على قطع غيار مضافة ";
+                    return RedirectToAction("DeviceDetails", new { id = model.DeviceId });
+                }
+
                 device.Status = MaintenanceStatus.Repaired.ToString();
                 card.Status = MaintenanceStatus.Closed.ToString();
 

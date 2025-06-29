@@ -19,7 +19,23 @@
     };
 }
 
+
 <div class="container mt-4" dir="rtl">
+    @if (TempData["Massege"] != null)
+    {
+        <div class="row">
+          <div class="col-lg-12">
+     
+            <div class="bs-component">
+              <div class="alert alert-dismissible alert-warning">
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <h4 class="alert-heading">Warning!</h4>
+                <p class="mb-0">  @TempData["Massege"]</p>
+              </div>
+            </div>
+          </div>
+        </div>
+    }
     <h2 class="text-primary text-end">تفاصيل الجهاز</h2>
     <hr />
     <dl class="row text-end">
@@ -73,16 +89,23 @@
 
             <div id="sparePartsSection" class="mt-3">
                 <h5 class="text-secondary">القطع المطلوبة</h5>
+                   @{
+                    var validItems = Model.SparePartRequest.Items.Where(i => i.Quantity > 0).ToList();
+                    var canEdit = status != MaintenanceStatus.NeedsParts
+                    && status != MaintenanceStatus.ApprovedByEngineer
+                    && status != MaintenanceStatus.ApprovedByOfficer;
 
-                @if (Model.SparePartRequest.Items.Any())
+                    }
+                @if (validItems.Any())
                 {
+                    <h5 class="text-secondary">القطع المطلوبة</h5>
                     <table class="table" id="partsTable">
                         <thead class="table-dark">
                             <tr>
                                 <th>اسم القطعة</th>
                                 <th>المستودع</th>
                                 <th>الكمية</th>
-                                @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
+                                @if (canEdit)
                                 {
                                     <th>حذف</th>
                                 }
@@ -92,58 +115,59 @@
                             @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
                             {
                                 var item = Model.SparePartRequest.Items[i];
-                                         @if (status != MaintenanceStatus.NeedsParts &&status !=  MaintenanceStatus.ApprovedByEngineer &&status != MaintenanceStatus.ApprovedByOfficer)
-            {
+                                if (item.Quantity == 0)
+                                {
+                                    continue;
+                                }
+
                                 <tr>
                                     <td>
-                                        <select name="SparePartRequest.Items[@i].ProductId" class="form-select">
-                                            @foreach (var product in Model.Products)
-                                            {
-                                                <option value="@product.Value" selected="@(product.Value == item.ProductId.ToString())">@product.Text</option>
-                                            }
-                                        </select>
+                                        @if (canEdit)
+                                        {
+                                            <select name="SparePartRequest.Items[@i].ProductId" class="form-select">
+                                                @foreach (var product in Model.Products)
+                                                {
+                                                    <option value="@product.Value" selected="@(product.Value == item.ProductId.ToString())">@product.Text</option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            @Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text
+                                        }
                                     </td>
                                     <td>
-                                        <select name="SparePartRequest.Items[@i].StoreId" class="form-select">
-                                            @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
-                                            {
-                                                <option value="@store.Value" selected="@(store.Value == item.StoreId?.ToString())">@store.Text</option>
-                                            }
-                                        </select>
+                                        @if (canEdit)
+                                        {
+                                            <select name="SparePartRequest.Items[@i].StoreId" class="form-select">
+                                                @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
+                                                {
+                                                    <option value="@store.Value" selected="@(store.Value == item.StoreId?.ToString())">@store.Text</option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            @item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text
+                                        }
                                     </td>
                                     <td>
-                                        <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" min="1" value="@(item.Quantity == 0 ? 1 : item.Quantity)" />
+                                        @if (canEdit)
+                                        {
+                                            <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" min="1" value="@item.Quantity" />
+                                        }
+                                        else
+                                        {
+                                            @item.Quantity
+                                        }
                                     </td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">🗑️ حذف</button>
-                                    </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    <tr>
-                                    <td>
-                                   
-                                            @foreach (var product in Model.Products)
-                                            {
-                                              @if(product.Value == item.ProductId.ToString())@product.Text
-                                            }
-
-                                    </td>
-                                    <td>
-                                       
-                                            @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
-                                            {
-                                                @if(store.Value == item.StoreId?.ToString())@store.Text
-                                            }
-                                      
-                                    </td>
-                                    <td>
-                                       @(item.Quantity == 0 ? "" : item.Quantity)
-                                    </td>
-                        
-                                    </tr>  
-                                }
+                                    @if (canEdit)
+                                    {
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">🗑️ حذف</button>
+                                        </td>
+                                    }
+                                </tr>
                             }
                         </tbody>
                     </table>
