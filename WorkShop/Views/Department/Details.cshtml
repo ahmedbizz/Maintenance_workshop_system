@@ -1,0 +1,38 @@
+﻿@model WorkShop.Models.Department
+
+<h2 class="text-center">تفاصيل القسم</h2>
+
+<div>
+    <div class="d-flex justify-content-between" ><h3>@Model.Name</h3><h4>القسم</h4></div>
+    <hr />
+    <h4 class="text-center">المستخدمون في هذا القسم</h4>
+
+    @if (Model.users != null && Model.users.Any())
+    {
+        <table class="table shadow table-hover">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>الهاتف</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.users)
+                {
+                    <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create_user_Edite", "User", new { id = user.Id })'">
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>@user.PhoneNumber</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>لا يوجد مستخدمون في هذا القسم.</p>
+    }
+</div>
+
+<a asp-action="Index" class=" btn btn-danger">عودة</a>

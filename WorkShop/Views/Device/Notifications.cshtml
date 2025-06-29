@@ -1,0 +1,13 @@
+﻿@model List<Notification>
+
+<h3>الإشعارات الجديدة</h3>
+<ul class="list-group">
+    @foreach (var noti in Model)
+    {
+        <li class="list-group-item">
+            <strong>@noti.Title</strong><br />
+            @noti.Message<br />
+            <small class="text-muted">@noti.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+        </li>
+    }
+</ul>

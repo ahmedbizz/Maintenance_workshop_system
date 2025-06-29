@@ -1,0 +1,37 @@
+﻿@model List<WorkShop.ViewModel.UserRoleViewModel>
+
+@{
+    ViewData["Title"] = "Manage User Roles";
+    var userId = ViewBag.UserId;
+}
+
+<h2>Manage Roles for User</h2>
+
+<form asp-action="MangamentUserRole" method="post">
+    <input type="hidden" name="userId" value="@userId" />
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Is Assigned</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => Model[i].RoleName)
+                        <input type="hidden" asp-for="@Model[i].RoleName" />
+                    </td>
+                    <td>
+                        <input asp-for="@Model[i].IsSelected" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>

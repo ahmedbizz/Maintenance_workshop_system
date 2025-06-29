@@ -1,0 +1,89 @@
+﻿@model User
+@{
+    ViewData["Title"] = "Create";
+}
+
+
+<div class="container p-4">
+
+
+    <div class="flex-column  ">
+
+
+
+
+        <form method="post" asp-controller="User" asp-action="Create_user_Edite" enctype="multipart/form-data" >
+            <div class="border p-3 mt4">
+                <div class="row pb-2 text-center">
+                    <h2 class="text-primary">Create new User</h2>
+                    <hr />
+                </div>
+                <div class="mb-3">
+                    <input type="file" asp-for="clientFile" onchange="loadFile(event)" />
+
+                    @if (Model != null && !string.IsNullOrEmpty(Model.imagePath))
+                    {
+                        <img id="imagePRO" src="~/images/@Model.imagePath" height="200px" />
+                    }
+                    else
+                    {
+                        <img id="imagePRO" height="200px" />
+                    }
+                </div>
+
+                <div class=" mb-3">
+                    <label asp-for="FullName"></label>
+                    <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+                <div class=" mb-3">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class=" mb-3">
+                    <label asp-for="PhoneNumber"></label>
+                    <input asp-for="PhoneNumber" class="form-control" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+
+
+                <div class=" mb-3">
+                    <label asp-for="DepartmentId" class="form-label">Depatment</label>
+                    <select asp-for="DepartmentId" class="form-control" asp-items= "ViewBag.Departments">
+                        <option value="">--Select one--</option>
+                    </select>
+                    <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                </div>
+                <div class="mb-3 text-center ">
+                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
+                    <a asp-action="Index" asp-controller="User" class="btn btn-primary" style="width:150px">Back</a>
+                </div>
+
+            </div>
+            <div asp-validation-summary="All"></div>
+        </form>
+
+
+
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+
+        var loadFile = (event)=>{
+            var reader = new FileReader();
+
+            reader.onload =()=>{
+            var profileimage = document.getElementById('imagePRO');
+            profileimage.src = reader.result;
+            }
+            reader.readAsDataURL(event.target.files[0])
+        }
+    </script>
+}
+

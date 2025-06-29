@@ -1,0 +1,38 @@
+﻿@model WorkShop.Models.Store
+
+<h2 class="text-center">تفاصيل القسم</h2>
+
+<div>
+    <div class="d-flex justify-content-between"><h3>@Model.Name</h3><h4>المستودع</h4></div>
+    <hr />
+    <h4 class="text-center">المنتجات  في هذا المستودع</h4>
+
+    @if (Model.productStocks != null && Model.productStocks.Any())
+    {
+        <table class="table shadow table-hover">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>القسم</th>
+                    <th>الكمية</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var productSK in Model.productStocks)
+                {
+                    <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create", "Product", new { id = productSK.productId })'">
+                        <td>@productSK.product.Name</td>
+                        <td>@Model.Name</td>
+                        <td>@productSK.quantity</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>لا يوجد منتجات  في هذا المستودع.</p>
+    }
+</div>
+
+<a asp-action="Index" class=" btn btn-danger">عودة</a>

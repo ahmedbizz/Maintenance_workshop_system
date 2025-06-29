@@ -1,0 +1,71 @@
+﻿@model Device
+@{
+    ViewData["Title"] = "DetailsPartsRequests";
+}
+
+<h1>DetailsPartsRequests</h1>
+
+<div class="container mt-4">
+    <h2 class="text-primary">تفاصيل الجهاز</h2>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">اسم الجهاز:</dt>
+        <dd class="col-sm-9">@Model.Product?.Name</dd>
+
+        <dt class="col-sm-3">الرقم التسلسلي:</dt>
+        <dd class="col-sm-9">@Model.SerialNumber</dd>
+
+        <dt class="col-sm-3">القسم المختص:</dt>
+        <dd class="col-sm-9">@Model.Department?.Name</dd>
+        <dt class="col-sm-3">الفني المسؤول:</dt>
+        <dd class="col-sm-9">@Model.Technician?.FullName</dd>
+
+        <dt class="col-sm-3">تقرير الفني:</dt>
+        <dd class="col-sm-9">@Model.MaintenanceCard?.TechnicianReport</dd>
+    </dl>
+      <h4 class="text-secondary">القطع المطلوبة</h4>
+    @if (Model.SparePartRequests != null && Model.SparePartRequests.Any())
+    {
+        var request = Model.SparePartRequests.FirstOrDefault();
+
+        if (request?.Items != null && request.Items.Any())
+        {
+            <table class="table table-hover shadow">
+                <thead>
+                    <tr>
+                        <th>قطعة الغيار</th>
+                        <th>الكمية</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in request.Items)
+                    {
+                        <tr>
+                            <td>@item.Product?.Name</td>
+                            <td>@item.Quantity</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-warning text-center">لا توجد قطع غيار في هذا الطلب.</div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-secondary text-center">لم يتم إرسال طلب قطع غيار لهذا الجهاز بعد.</div>
+    }
+
+
+<a class="btn btn-primary btn-sm" asp-action="ReviewPartsRequestsByOfficer" asp-controller="Device">Back</a>
+
+                        <form method="post" asp-action="ApproveParts" asp-route-id="@Model.Id" style="display:inline-block">
+                            <button class="btn btn-success btn-sm">موافقة</button>
+                        </form>
+                        <form method="post" asp-action="RejectParts" asp-route-id="@Model.Id" style="display:inline-block">
+                            <button class="btn btn-danger btn-sm">رفض</button>
+                        </form>
+</div>
+

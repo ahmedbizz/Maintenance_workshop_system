@@ -1,0 +1,286 @@
+﻿@model WorkShop.ViewModel.DeviceDetailsViewModel
+@using WorkShop.Enums
+
+@{
+    var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), Model.DeviceStatus ?? "Pending");
+
+    string GetStatusColor(MaintenanceStatus s) => s switch
+    {
+        MaintenanceStatus.Pending => "secondary",
+        MaintenanceStatus.AwaitingEngineer => "warning",
+        MaintenanceStatus.ApprovedByEngineer => "primary",
+        MaintenanceStatus.AwaitingOfficer => "info",
+        MaintenanceStatus.ApprovedByOfficer => "success",
+        MaintenanceStatus.RejectedByEngineer => "danger",
+        MaintenanceStatus.RejectedByOfficer => "danger",
+        MaintenanceStatus.Repaired => "success",
+        MaintenanceStatus.Closed => "dark",
+        _ => "secondary"
+    };
+}
+
+<div class="container mt-4" dir="rtl">
+    <h2 class="text-primary text-end">تفاصيل الجهاز</h2>
+    <hr />
+    <dl class="row text-end">
+        <dt class="col-sm-1">اسم الجهاز:</dt>
+        <dd class="col-sm-4">@Model.ProductName</dd>
+        <dt class="col-sm-1">الحالة:</dt>
+        <dd class="col-sm-4">
+            <span class="badge bg-@GetStatusColor(status) p-2">
+                @status.ToString()
+            </span>
+        </dd>
+
+        <dt class="col-sm-1">الرقم التسلسلي:</dt>
+        <dd class="col-sm-4">@Model.SerialNumber</dd>
+        <dt class="col-sm-1">القسم:</dt>
+        <dd class="col-sm-4">@Model.DepartmentName</dd>
+
+        <dt class="col-sm-3">تاريخ العطل:</dt>
+        <dd class="col-sm-7">@Model.FaultDate.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-sm-2">وصف العطل:</dt>
+        <dd class="col-sm-10">@Model.TechnicianReport</dd>
+    </dl>
+
+    @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed))
+    {
+        <form asp-action="SubmitReport" asp-controller="Device" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DeviceId" />
+            <input type="hidden" asp-for="SerialNumber" />
+
+            <div class="mb-3">
+                <label asp-for="TechnicianReport" class="form-label">تقرير الفني</label>
+                <textarea asp-for="TechnicianReport" class="form-control"></textarea>
+            </div>
+
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer))
+            {
+                <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-end gap-2">
+                    <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
+                    <label asp-for="IsRepaired" class="form-check-label" for="CheckRepaired">تم الإصلاح</label>
+                </div>
+            }
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+            {
+                <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-end gap-2 mt-2">
+                    <input asp-for="RequestSpareParts" class="form-check-input" type="checkbox" id="toggleSpareParts" />
+                    <label asp-for="RequestSpareParts" class="form-check-label">طلب قطع غيار</label>
+                </div>
+            }
+
+            <div id="sparePartsSection" class="mt-3">
+                <h5 class="text-secondary">القطع المطلوبة</h5>
+
+                @if (Model.SparePartRequest.Items.Any())
+                {
+                    <table class="table" id="partsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>اسم القطعة</th>
+                                <th>المستودع</th>
+                                <th>الكمية</th>
+                                @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
+                                {
+                                    <th>حذف</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
+                            {
+                                var item = Model.SparePartRequest.Items[i];
+                                         @if (status != MaintenanceStatus.NeedsParts &&status !=  MaintenanceStatus.ApprovedByEngineer &&status != MaintenanceStatus.ApprovedByOfficer)
+            {
+                                <tr>
+                                    <td>
+                                        <select name="SparePartRequest.Items[@i].ProductId" class="form-select">
+                                            @foreach (var product in Model.Products)
+                                            {
+                                                <option value="@product.Value" selected="@(product.Value == item.ProductId.ToString())">@product.Text</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="SparePartRequest.Items[@i].StoreId" class="form-select">
+                                            @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
+                                            {
+                                                <option value="@store.Value" selected="@(store.Value == item.StoreId?.ToString())">@store.Text</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" min="1" value="@(item.Quantity == 0 ? 1 : item.Quantity)" />
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">🗑️ حذف</button>
+                                    </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                    <td>
+                                   
+                                            @foreach (var product in Model.Products)
+                                            {
+                                              @if(product.Value == item.ProductId.ToString())@product.Text
+                                            }
+
+                                    </td>
+                                    <td>
+                                       
+                                            @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
+                                            {
+                                                @if(store.Value == item.StoreId?.ToString())@store.Text
+                                            }
+                                      
+                                    </td>
+                                    <td>
+                                       @(item.Quantity == 0 ? "" : item.Quantity)
+                                    </td>
+                        
+                                    </tr>  
+                                }
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (!Model.RequestSpareParts)
+                {
+                    <div class="alert alert-warning text-center">لم يتم طلب أي قطع غيار لهذا الجهاز.</div>
+                }
+
+                @* زر الإضافة يظهر فقط إذا تم تفعيل طلب قطع الغيار *@
+                <button type="button" class="btn btn-secondary" id="sparePartsAdd" style="display:@(Model.RequestSpareParts ? "block" : "none")" onclick="addRow()">➕ إضافة قطعة</button>
+            </div>
+            @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer)
+            {
+
+                <button type="submit" class="btn btn-success mt-3">💾 حفظ التقرير</button>
+            }
+        </form>
+    }
+    else
+    {
+
+        <h5 class="text-secondary">القطع المطلوبة</h5>
+                        @if (Model.SparePartRequest.Items.Any())
+                {
+                    <table class="table" id="partsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>اسم القطعة</th>
+                                <th>المستودع</th>
+                                <th>الكمية</th>
+          
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
+                            {
+                                var item = Model.SparePartRequest.Items[i];
+                       
+                            <tr>
+                                <td>
+
+                                    @foreach (var product in Model.Products)
+                                    {
+                                        @if (product.Value == item.ProductId.ToString())
+                                            @product.Text
+                                        }
+
+                                </td>
+                                <td>
+
+                                    @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
+                                    {
+                                        @if (store.Value == item.StoreId?.ToString())
+                                             @store.Text
+                                        }
+
+                                </td>
+                                <td>
+                                    @(item.Quantity == 0 ? "" : item.Quantity)
+                                </td>
+
+                            </tr>
+                        
+                    }
+                </tbody>
+            </table>
+        }
+        <div class="alert alert-info mt-4 text-center">لا يمكنك تعديل التقرير.</div>
+    }
+
+    <form id="deleteForm" asp-controller="Device" asp-action="DeleteItemPart" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="DeviceId" id="deleteDeviceId" />
+        <input type="hidden" name="Id" id="deleteItemId" />
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    function submitDelete(id, deviceId) {
+        document.getElementById("deleteItemId").value = id;
+        document.getElementById("deleteDeviceId").value = deviceId;
+        document.getElementById("deleteForm").submit();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById("toggleSpareParts");
+        const section = document.getElementById("sparePartsSection");
+        const addButton = document.getElementById("sparePartsAdd");
+
+        function toggleSpareParts(state) {
+            if (section) section.style.display = state ? "block" : "none";
+            if (addButton) addButton.style.display = state ? "block" : "none";
+
+            const inputs = section.querySelectorAll("input, select");
+            inputs.forEach(input => input.disabled = !state);
+        }
+
+        if (toggle) {
+            toggleSpareParts(toggle.checked);
+            toggle.addEventListener("change", function () {
+                toggleSpareParts(this.checked);
+            });
+        }
+    });
+
+    let partIndex = @Model.SparePartRequest.Items?.Count() ?? 0;
+
+    function addRow() {
+        const row = `
+            <tr>
+                <td>
+                    <select name="SparePartRequest.Items[${partIndex}].ProductId" class="form-select">
+                        @foreach (var product in Model.Products)
+                        {
+                            <text><option value="@product.Value">@product.Text</option></text>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select name="SparePartRequest.Items[${partIndex}].StoreId" class="form-select">
+                        @foreach (var store in Model.SparePartRequest.Items.FirstOrDefault()?.AvailableStores ?? new List<SelectListItem>())
+                        {
+                            <text><option value="@store.Value">@store.Text</option></text>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="SparePartRequest.Items[${partIndex}].Quantity" class="form-control" min="1" value="1" />
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">🗑️</button>
+                </td>
+            </tr>`;
+        document.querySelector('#partsTable tbody').insertAdjacentHTML('beforeend', row);
+        partIndex++;
+    }
+</script>
+}

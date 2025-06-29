@@ -1,0 +1,40 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model WorkShop.ViewModel.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+
+<div class="container d-flex flex-column align-items-center justify-content-lg-start" style="min-height: 100vh; padding-top: 60px;direction: rtl;">
+
+    <div class="mb-4">
+        <img src="~/images/logo.jpg" alt="شعار الشركة" style="max-height: 100px;border-radius:50px;">
+    </div>
+
+    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+        <h3 class="text-center text-primary mb-4">@Localizer["Title"]</h3>
+
+        <form asp-action="Login" method="post">
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">@Localizer["Password"]</label>
+                <input asp-for="Password" class="form-control" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <button type="submit" class="btn btn-primary w-100">@Localizer["LoginButton"]</button>
+        </form>
+        <a class="nav-link text-dark m-3" asp-controller="Account" asp-action="Register">@Localizer["CreateAccount"]</a>
+    </div>
+</div>
+
+@section Scripts{
+
+    <partial name="_ValidationScriptsPartial"></partial>
+}

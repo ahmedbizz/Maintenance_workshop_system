@@ -1,0 +1,61 @@
+﻿@model Store
+@{
+    ViewData["Title"] = "Create";
+}
+
+
+<div class="container p-4">
+
+
+    <div class="flex-column  ">
+
+
+
+
+        <form method="post" asp-controller="Store" asp-action="Create">
+            <div class="border p-3 mt4">
+                <div class="row pb-2 text-center">
+                    <h2 class="text-primary">Create new Store</h2>
+                    <hr />
+                </div>
+
+
+                <div class=" mb-3">
+                    <label asp-for="Name"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class=" mb-3">
+                    <label asp-for="Location"></label>
+                    <input asp-for="Location" class="form-control" />
+                    <span asp-validation-for="Location" class="text-danger"></span>
+                </div>
+
+                <div class=" mb-3">
+                    <label asp-for="DepartmentId" class="form-label">Depatment</label>
+                    <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments">
+                        <option value="">--Select one--</option>
+                    </select>
+                    <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                </div>
+
+
+                <div class="mb-3 text-center ">
+                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
+                    <a asp-action="Index" asp-controller="Store" class="btn btn-primary" style="width:150px">Back</a>
+                </div>
+
+            </div>
+            <div asp-validation-summary="All"></div>
+        </form>
+
+
+
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

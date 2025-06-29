@@ -1,0 +1,35 @@
+﻿@model List<SparePartRequest>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>رقم الجهاز</th>
+            <th>القطع المطلوبة</th>
+            <th>تاريخ الطلب</th>
+            <th>صرف</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var req in Model)
+        {
+            <tr>
+                <td>@req.Device.SerialNumber</td>
+                <td>
+                    <ul>
+                        @foreach (var item in req.Items)
+                        {
+                            <li>@item.Product.Name - الكمية: @item.Quantity</li>
+                        }
+                    </ul>
+                </td>
+                <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <form asp-action="Deliver" asp-controller="Device" method="post">
+                        <input type="hidden" name="RequestId" value="@req.Id" />
+                        <button type="submit" class="btn btn-success">صرف القطع</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

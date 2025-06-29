@@ -1,0 +1,31 @@
+﻿@model IEnumerable<WorkShop.Models.User>
+
+@{
+    ViewData["Title"] = "Users List";
+}
+
+<h2>Users List</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>UserName</th>
+            <th>Email</th>
+            <th>Full Name</th>
+            <th>Roles</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.Email</td>
+                <td>@user.FullName</td>
+                <td>
+                    <a asp-action="MangamentUserRole" asp-route-userId="@user.Id" class="btn btn-sm btn-outline-primary">Manage Roles</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

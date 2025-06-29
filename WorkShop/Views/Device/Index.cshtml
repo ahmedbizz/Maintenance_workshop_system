@@ -1,0 +1,37 @@
+﻿@model IEnumerable<Device>
+
+
+<div class="d-flex align-items-center justify-content-between">
+    <h2 class="mb-4">الأجهزة المستلمة</h2>
+          @if (User.IsInRole("Engineer"))
+                            {
+    <a asp-action="AddDevice" asp-controller="Device" class="btn btn-success"><i class="bi bi-plus-lg"></i>Create</a>
+                            }
+</div>
+<table class="table tab-content shadow m-4 p-2 table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>اسم الجهاز</th>
+            <th>الرقم التسلسلي</th>
+            <th>القسم</th>
+            <th>الفني المستلم</th>
+            <th>الحالة</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var device in Model)
+        {
+            <tr style="cursor:pointer" onclick="location.href='@Url.Action("DeviceDetails", "Device", new { id = device.Id })'">
+                <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow" /></td>
+                <td>@device.Product?.Name</td>
+                <td>@device.SerialNumber</td>
+                <td>@device.Department?.Name</td>
+                <td>@device.Technician?.FullName</td>
+                <td>@device.Status</td>
+  
+            </tr>
+        }
+    </tbody>
+</table>

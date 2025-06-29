@@ -1,0 +1,58 @@
+﻿@model List<Device>
+@using WorkShop.Enums
+
+@{
+ 
+
+    string GetStatusColor(MaintenanceStatus s) => s switch
+    {
+        MaintenanceStatus.Pending => "secondary",
+        MaintenanceStatus.AwaitingEngineer => "warning",
+        MaintenanceStatus.ApprovedByEngineer => "primary",
+        MaintenanceStatus.AwaitingOfficer => "info",
+        MaintenanceStatus.ApprovedByOfficer => "success",
+        MaintenanceStatus.RejectedByEngineer => "danger",
+        MaintenanceStatus.RejectedByOfficer => "danger",
+        MaintenanceStatus.Repaired => "success",
+        MaintenanceStatus.Closed => "dark",
+        _ => "secondary"
+    };
+}
+@{
+    ViewData["Title"] = "الأجهزة الخاصة بي";
+}
+
+<h2 class="mb-4 text-primary">الأجهزة المحولة إليك</h2>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>الاسم</th>
+            <th>الرقم التسلسلي</th>
+            <th>القسم</th>
+            <th>تاريخ العطل</th>
+            <th>الحالة</th>
+            <th>الإجراءات</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var device in Model)
+        {
+            var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus),device.Status ?? "New");
+            <tr>
+                <td>@device.Product?.Name</td>
+                <td>@device.SerialNumber</td>
+                <td>@device.Department?.Name</td>
+                <td>@device.FaultDate.ToShortDateString()</td>
+                <td>
+                    <span class="badge bg-@GetStatusColor(status) p-2">
+                        @status.ToString()
+                    </span>
+                </td>
+                <td>
+                    <a asp-action="DeviceDetails" asp-route-id="@device.Id" class="btn btn-sm btn-primary">عرض التفاصيل</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

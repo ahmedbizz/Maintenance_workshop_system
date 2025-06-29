@@ -1,0 +1,92 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model WorkShop.ViewModel.RegisterViewModel
+@{
+    ViewData["Title"] = @Localizer["Register"];
+    Layout = "_Layout";
+}
+
+<div class="container d-flex justify-content-center align-items-start mt-5" style="direction: rtl;">
+    <div class="card shadow p-4" style="max-width: 600px; width: 100%;">
+        <h3 class="text-center text-primary mb-4">@Localizer["CreateNewAccount"]</h3>
+        <form asp-action="Register" method="post" enctype="multipart/form-data">
+
+            <!-- الصورة -->
+            <div class="mb-3 text-center">
+
+                <input id="imageInput" type="file" asp-for="Image" class="form-control" hidden onchange="loadFile(event)" />
+                <br />
+                <img class=" shadow  rounded-circle" id="imagePRO" src="@(Model?.imagePath != null ? Url.Content("~/images/" + Model.imagePath) : Url.Content("~/images/user.png"))"
+                     height="150px" class="img-thumbnail mt-2"
+                     style="cursor: pointer;"
+                     
+                     onclick="document.getElementById('imageInput').click();" />
+            </div>
+
+            <!-- الاسم -->
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label">@Localizer["Name"] </label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <!-- البريد -->
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <!-- رقم الهاتف -->
+            <div class="mb-3">
+                <label asp-for="PhoneNumber" class="form-label">@Localizer["Phone"]</label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+
+            <!-- القسم -->
+            <div class="mb-3">
+                <label asp-for="DepartmentId" class="form-label">@Localizer["Department"]</label>
+                <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments">
+                    <option value="">-- @Localizer["SelectOne"] --</option>
+                </select>
+                <span asp-validation-for="DepartmentId" class="text-danger"></span>
+            </div>
+
+            <!-- كلمة المرور -->
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"> @Localizer["Password"]</label>
+                <input asp-for="Password" class="form-control" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <!-- تأكيد كلمة المرور -->
+            <div class="mb-3">
+                <label asp-for="ConfirmPassword" class="form-label"> @Localizer["ConfirmPassword"] </label>
+                <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">@Localizer["Register"]</button>
+            </div>
+        </form>
+        <a class="nav-link text-dark m-3" asp-controller="Account" asp-action="Login">@Localizer["Account"]</a>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var loadFile = function (event) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                var output = document.getElementById('imagePRO');
+                output.src = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        };
+    </script>
+
+
+}

@@ -1,0 +1,79 @@
+﻿@model WorkShop.ViewModel.SparePartRequestViewModel
+
+@{
+    ViewData["Title"] = "طلب قطع غيار";
+}
+
+<h2 class="mb-4">طلب قطع غيار للجهاز - الرقم التسلسلي: @Model.DeviceSerialNumber</h2>
+
+<form asp-action="RequestSpareParts" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="DeviceId" />
+
+    <table class="table table-bordered" id="partsTable">
+        <thead class="table-dark">
+            <tr>
+                <th>اسم القطعة</th>
+                <th>الكمية</th>
+                <th>حذف</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <select class="form-select" asp-for="Items[@i].ProductId" asp-items="Model.Products"></select>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control" asp-for="Items[@i].Quantity" min="1" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">🗑️</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mb-3">
+        <button type="button" class="btn btn-secondary" onclick="addRow()">➕ إضافة قطعة جديدة</button>
+    </div>
+
+    <div class="mb-3 text-end">
+        <button type="submit" class="btn btn-primary">💾 حفظ / إرسال الطلب</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        function addRow() {
+            const index = document.querySelectorAll('#partsTable tbody tr').length;
+
+            const newRow = `
+                <tr>
+                    <td>
+                        <select class="form-select" name="Items[${index}].ProductId">
+                            ${`@foreach (var item in Model.Products) {
+                                <text><option value="@item.Value">@item.Text</option></text>
+                        }
+`}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="Items[${index}].Quantity" min="1" value="1" />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">🗑️</button>
+                </td>
+            </tr>
+        `;
+        document.querySelector('#partsTable tbody').insertAdjacentHTML('beforeend', newRow);
+    }
+
+    function removeRow(btn) {
+        btn.closest('tr').remove();
+    }
+</script>
+}
