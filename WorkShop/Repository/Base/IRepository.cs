@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq.Expressions;
 using WorkShop.Models;
 
 namespace WorkShop.Repository.Base
@@ -26,7 +27,8 @@ namespace WorkShop.Repository.Base
 
         void Update(T? entity);
 
-
+        IQueryable<T> Search(params string[] includes);
+        IQueryable<T> SearchBycondition(Expression<Func<T,bool>> expression,params string[] includes);
 
         void DeleteList(IEnumerable<T> ItemList);
 

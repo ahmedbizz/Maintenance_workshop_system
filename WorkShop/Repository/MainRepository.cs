@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using WorkShop.Context;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
@@ -55,6 +56,38 @@ namespace WorkShop.Repository
             }
             return query.ToList();
         }
+
+
+        // To Search item in table
+
+        public IQueryable<T> Search(params string[] includes)
+        {
+            IQueryable<T> query = Context.Set<T>();
+            if (includes.Length > 0)
+            {
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            return query;
+        }
+
+        public IQueryable<T> SearchBycondition(Expression<Func<T, bool>> expression, params string[] includes)
+        {
+            IQueryable<T> query = Context.Set<T>();
+            if (includes.Length > 0)
+            {
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            return query.Where(expression);
+        }
+
         //=========================Insert=============================
         // To Add Item in Table 
         public void Insert(T entity)
@@ -139,6 +172,7 @@ namespace WorkShop.Repository
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
+
 
     }
 }

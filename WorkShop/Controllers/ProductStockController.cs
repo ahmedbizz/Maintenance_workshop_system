@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
+using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
 {
@@ -12,22 +13,37 @@ namespace WorkShop.Controllers
 
         public ProductStockController(IUnitOfWork unitOfWork)
         {
-           // _repository = repository;
-           // _store = repStore;
-            //_product = repProduct;
-
-            _unitOfWork = unitOfWork;
-            
+            _unitOfWork = unitOfWork;    
         }
-
-        //protected readonly IRepository<ProductStock> _repository;
-        //protected readonly IRepository<Store> _store;
-        //protected readonly IRepository<Product> _product;
         private readonly IUnitOfWork _unitOfWork;
  
-        public IActionResult Index()
+        public IActionResult Index(string searchTerm, int page = 1)
         {
-            return View(_unitOfWork.productStoks.FindAll("product","store"));
+            var pgeSize = 10; // عدد العناصر في كل صفحة
+            
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                _unitOfWork.productStoks.FindAll("product", "store") :
+                _unitOfWork.productStoks.SearchBycondition(
+                    ps => ps.product.Name.Contains(searchTerm) || 
+                    ps.store.Name.Contains(searchTerm), "product", "store");
+
+            int totalItems = query.Count();
+
+            var productStocks = query
+                .Skip((page - 1) * pgeSize)
+                .Take(pgeSize)
+                .ToList();
+
+            var viewModel = new ProductStockViewModel
+            {
+                ProductStocks = productStocks,
+                SearchTerm = searchTerm,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pgeSize)
+            };
+
+
+            return View(viewModel);
         }
         public IActionResult Details() { return View(); }
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using WorkShop.Context;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
+using WorkShop.ViewModel;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace WorkShop.Controllers
@@ -31,9 +32,30 @@ namespace WorkShop.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHostingEnvironment _environment;
 
-        public IActionResult Index()
+        public IActionResult Index(string searchTerm, int page = 1)
         {
-            return View(_unitOfWork.users.FindAll("department").ToList());
+
+            var pageSize = 10;
+
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                _unitOfWork.users.FindAll("department") :
+                _unitOfWork.users.SearchBycondition(u => u.FullName.Contains(searchTerm) ||
+                u.Email.Contains(searchTerm),"department");
+            int totalItems = query.Count();
+
+            var users = query.Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var viewModel = new UserViewModel
+            {
+                users = users,
+                SearchTerm = searchTerm,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+
+            };
+            return View(viewModel);
         }
         [HttpGet]
         public IActionResult Create_user_Edite(string? Id)
@@ -76,7 +98,11 @@ namespace WorkShop.Controllers
                 if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
                 unigName = Guid.NewGuid().ToString() + Path.GetExtension(user.clientFile.FileName);
                 string fullPath = Path.Combine(uploadFolder, unigName);
-                await user.clientFile.CopyToAsync(new FileStream(fullPath, FileMode.Create));
+                using (var strem =new FileStream(fullPath, FileMode.Create))
+                {
+                    await user.clientFile.CopyToAsync(strem);
+                }
+                   
             }
             var existingUser = await _userManager.FindByIdAsync(user.Id);
             if (existingUser == null)

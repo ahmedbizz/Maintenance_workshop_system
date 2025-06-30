@@ -31,10 +31,29 @@ namespace WorkShop.Controllers
         }
         private readonly UserManager<User> _userManager;
         private readonly IUnitOfWork _unitOfWork;
-        public IActionResult Index()
+        public IActionResult Index(string searchTerm , int page =1)
         {
-            var devices = _unitOfWork.devices.FindAll("Product", "Department", "Technician").ToList();
-            return View(devices);
+
+            var pageSize = 10;
+
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician") :
+                 _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
+                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician");
+
+            var devices = query.ToList();
+            var totalDevices = devices.Count;
+             var pagedDevices = devices.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var viewModel = new DevicesViewModel
+            {
+                devices = pagedDevices,
+                CurrentPage= page,
+                searchTerm = searchTerm,
+                TotalPages = (int)Math.Ceiling((double)totalDevices / pageSize)
+            };
+    
+            return View(viewModel);
         }
         [HttpGet]
         [Authorize(Roles = "Engineer")]
@@ -482,14 +501,31 @@ namespace WorkShop.Controllers
 
         [HttpGet]
         [Authorize(Roles ="Engineer")]
-        public async Task<IActionResult> ReviewPartsRequests()
+        public async Task<IActionResult> ReviewPartsRequests(string searchTerm , int page =1)
         {
             var user = await _userManager.GetUserAsync(User);
-            var devices = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard")
-                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString()).ToList();
+            var pageSize = 10;
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard")
+                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString()) :
+                _unitOfWork.devices.SearchBycondition(d=>d.SerialNumber.Contains(searchTerm)|| d.Product.Name.Contains(searchTerm)
+                , "Product", "Department", "Technician", "MaintenanceCard")
+                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString());
+            var totalDevice = query.Count();
+            var devices = query.Skip((page -1) * pageSize)
+                .Take(pageSize).ToList();
 
 
-            return View(devices);
+            var viewModel = new ReviewPartsRequestsViewModel
+            {
+                devices = devices,
+                SearchTerm = searchTerm,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling((double)totalDevice / pageSize)
+            };
+
+
+            return View(viewModel);
         }
 
         [HttpGet]
@@ -1021,7 +1057,12 @@ namespace WorkShop.Controllers
 
             _unitOfWork.notifications.Delete(notification.Id);
             await _unitOfWork.CompleteAsync();
-            return RedirectToAction("Index");
+            var currentUser = await _userManager.GetUserAsync(User);
+            var notifications = _unitOfWork.notifications.FindAll()
+                                    .Where(n => n.ReceiverId == currentUser.Id)
+                                    .ToList();
+
+            return Ok();
         }
 
 

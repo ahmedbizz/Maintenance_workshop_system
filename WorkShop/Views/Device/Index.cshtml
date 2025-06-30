@@ -1,13 +1,39 @@
-﻿@model IEnumerable<Device>
+﻿@model WorkShop.ViewModel.DevicesViewModel
+@using WorkShop.Enums
 
+@{
+
+
+    string GetStatusColor(MaintenanceStatus s) => s switch
+    {
+        MaintenanceStatus.Pending => "secondary",
+        MaintenanceStatus.AwaitingEngineer => "warning",
+        MaintenanceStatus.ApprovedByEngineer => "primary",
+        MaintenanceStatus.AwaitingOfficer => "info",
+        MaintenanceStatus.ApprovedByOfficer => "success",
+        MaintenanceStatus.RejectedByEngineer => "danger",
+        MaintenanceStatus.RejectedByOfficer => "danger",
+        MaintenanceStatus.Repaired => "success",
+        MaintenanceStatus.Closed => "dark",
+        _ => "secondary"
+    };
+}
 
 <div class="d-flex align-items-center justify-content-between">
-    <h2 class="mb-4">الأجهزة المستلمة</h2>
+    <h2 class="mb-4">Devices</h2>
+    <div class="col-6 text-center align-items-center">
+
+        <form class="d-flex">
+            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm">
+            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
           @if (User.IsInRole("Engineer"))
                             {
-    <a asp-action="AddDevice" asp-controller="Device" class="btn btn-success"><i class="bi bi-plus-lg"></i>Create</a>
+        <a asp-action="AddDevice" asp-controller="Device" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
                             }
 </div>
+
 <table class="table tab-content shadow m-4 p-2 table-hover">
     <thead class="table-dark">
         <tr>
@@ -21,17 +47,33 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var device in Model)
+        @foreach (var device in Model.devices)
         {
+            var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
             <tr style="cursor:pointer" onclick="location.href='@Url.Action("DeviceDetails", "Device", new { id = device.Id })'">
                 <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow" /></td>
                 <td>@device.Product?.Name</td>
                 <td>@device.SerialNumber</td>
                 <td>@device.Department?.Name</td>
                 <td>@device.Technician?.FullName</td>
-                <td>@device.Status</td>
+                <td>
+                    <span class="badge bg-@GetStatusColor(status) p-2">
+                        @status.ToString()
+                    </span>
+                </td>
   
             </tr>
         }
     </tbody>
 </table>
+<nav>
+    <ul class="pagination justify-content-center">
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+            </li>
+        }
+    </ul>
+</nav>
+@* Add a section for scripts if needed *@

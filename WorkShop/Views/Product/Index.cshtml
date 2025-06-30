@@ -1,17 +1,27 @@
-﻿@model IEnumerable<Product>
+﻿@model WorkShop.ViewModel.ProductListViewModel
 @{
     ViewData["Title"] = "Product";
 }
 
 <div class="row pt-4 align-items-center">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-2">
+            <h1 class="text-primary">Products</h1>
+        </div>
+        <div class="col-6 text-center align-items-center">
 
-    <div class="col-6">
-        <h1 class="text-primary">Products</h1>
-    </div>
-    <div class="col-6 text-end align-items-center">
-        <a asp-action="Create" asp-controller="Product" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
+            <form class="d-flex">
+                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+        <div class="col-2 text-end align-items-center">
+            <a asp-action="Create" asp-controller="Product" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
 
+        </div>
     </div>
+
+
 
     <table class="table tab-content shadow m-4 p-2 table-hover">
         <thead>
@@ -24,7 +34,7 @@
         <th></th>
         </thead>
         <tbody>
-            @foreach (var product in Model)
+            @foreach (var product in Model.Products)
             {
                 <tr style="cursor:pointer" onclick="location.href='@Url.Action("Details", "Product", new { id = @product.Id })'">
                     <td width="10%">@product.Id</td>
@@ -50,6 +60,16 @@
         </tbody>
 
     </table>
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
 
 
 

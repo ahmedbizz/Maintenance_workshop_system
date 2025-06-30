@@ -132,28 +132,32 @@
                                                 // تحديد الرابط حسب نوع المستخدم
                                                 if (User.IsInRole("Officer"))
                                                 {
-                                                    url = Url.Action("ReviewPartsRequestsByOfficer", "Device", new { id = n.DeviceId });
+                                                    url = Url.Action("ReviewPartsRequestsByOfficer", "Device");
                                                 }
                                                 if (User.IsInRole("Engineer"))
                                                 {
-                                                    url = Url.Action("DetailsPartsRequests", "Device", new { id = n.DeviceId });
+                                                    url = Url.Action("ReviewPartsRequests", "Device");
                                                 }
                                                 else if (User.IsInRole("Technion"))
                                                 {
-                                                    url = Url.Action("DeviceDetails", "Device", new { id = n.DeviceId });
+                                                    url = Url.Action("TechnicionDevices", "Device");
                                                 }
                                             }
                                             <li class="dropdown-item @(n.IsRead ? "bg-light" : "bg-light")"
                                                 data-url=@url
                                                 onclick="window.location.href = this.dataset.url"
                                                 style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between">
                                                 <div>
                                                     <strong>@n.Title</strong><br />
                                                     @n.Message <br />
                                                     <small class="text-muted">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
-                                                    <form asp-controller="Device" asp-action="DeleteNotification" asp-route-id="@n.Id" method="post" onclick="event.stopPropagation();">
-                                                        <button class="btn btn-sm btn-danger mt-1">حذف</button>
-                                                    </form>
+                                       
+                                                </div>
+                                                <a class="text-danger"
+                                                   onclick="deleteNotification(@n.Id)">
+                                                        <i class="bi bi-x-lg"></i>
+                                                </a>
                                                 </div>
                                             </li>
                                         }
@@ -210,7 +214,23 @@
             &copy; 2025 - WorkShop - <a asp-controller="Home" asp-action="Privacy">سياسة الخصوصية</a>
         </div>
     </footer>
-
+    <script>
+        function deleteNotification(id) {
+            fetch(`/Device/DeleteNotification/${id}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // حذف العنصر من الصفحة بدون تحديث
+                    const element = document.getElementById(`notification-${id}`);
+                    if (element) element.remove();
+                }
+            });
+        }
+    </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,7 +1,14 @@
-﻿@model List<Device>
+﻿@model WorkShop.ViewModel.ReviewPartsRequestsViewModel
 
 <div class="container mt-4">
     <h2 class="text-primary">طلبات قطع الغيار</h2>
+    <div class="col-6 text-center align-items-center">
+
+        <form class="d-flex">
+            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
     <hr />
     <table class="table table-bordered  table-hover">
         <thead class="table-dark">
@@ -14,7 +21,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var device in Model)
+            @foreach (var device in Model.devices)
             {
                 <tr data-url="@Url.Action("DetailsPartsRequests", "Device", new { id = device.Id })" style="cursor:pointer;">
                     <td>@device.Product?.Name</td>
@@ -33,6 +40,16 @@
             }
         </tbody>
     </table>
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
 </div>
 
 @section Scripts {

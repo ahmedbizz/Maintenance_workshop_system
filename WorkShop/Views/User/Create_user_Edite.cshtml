@@ -18,19 +18,16 @@
                     <h2 class="text-primary">Create new User</h2>
                     <hr />
                 </div>
-                <div class="mb-3">
-                    <input type="file" asp-for="clientFile" onchange="loadFile(event)" />
 
-                    @if (Model != null && !string.IsNullOrEmpty(Model.imagePath))
-                    {
-                        <img id="imagePRO" src="~/images/@Model.imagePath" height="200px" />
-                    }
-                    else
-                    {
-                        <img id="imagePRO" height="200px" />
-                    }
+                <div class="mb-3 text-center">
+
+                    <input id="imageInput" type="file" asp-for="clientFile" class="form-control" hidden onchange="loadFile(event)" />
+                    <br />
+                    <img class=" shadow  " id="proImg" src="@(Model?.imagePath != null ? Url.Content("~/images/" + Model.imagePath) : Url.Content("~/images/user.png"))"
+                         height="150px" class="img-thumbnail mt-2"
+                         style="cursor: pointer;"
+                         onclick="document.getElementById('imageInput').click();" />
                 </div>
-
                 <div class=" mb-3">
                     <label asp-for="FullName"></label>
                     <input asp-for="FullName" class="form-control" />
@@ -74,15 +71,14 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-
         var loadFile = (event)=>{
             var reader = new FileReader();
+            reader.onload = ()=>{
+            var proImg  = document.getElementById('proImg');
+            proImg.src = reader.result;
 
-            reader.onload =()=>{
-            var profileimage = document.getElementById('imagePRO');
-            profileimage.src = reader.result;
             }
-            reader.readAsDataURL(event.target.files[0])
+            reader.readAsDataURL(event.target.files[0]);
         }
     </script>
 }

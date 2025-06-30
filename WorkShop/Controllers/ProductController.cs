@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Primitives;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
+using WorkShop.ViewModel;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace WorkShop.Controllers
@@ -28,9 +29,27 @@ namespace WorkShop.Controllers
         //protected readonly IRepository<Department> _department;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHostingEnvironment _environment;
-        public IActionResult Index()
+        public IActionResult Index(string searchTerm, int page = 1)
         {
-            return View(_unitOfWork.products.FindAll("department"));
+            int pageSize = 10;
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                _unitOfWork.products.FindAll("department") :
+                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm) ,"department");
+            int totalItems = query.Count();
+
+            var products = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var viewModel = new ProductListViewModel
+            {
+                Products = products,
+                SearchTerm = searchTerm,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+            };
+            return View(viewModel);
         }
 
         public IActionResult Details(int? Id)
@@ -71,7 +90,11 @@ namespace WorkShop.Controllers
                         string Upload = Path.Combine(_environment.WebRootPath, "images");
                         filename = product.clientFile.FileName;
                         string FullPath = Path.Combine(Upload,filename);
-                        product.clientFile.CopyTo(new FileStream(FullPath, FileMode.Create));
+                        using (var strem = new FileStream(FullPath, FileMode.Create))
+                        {
+                            product.clientFile.CopyTo(strem);
+                        }
+                        
                         product.imagePath = filename;
                     }
 
@@ -93,7 +116,10 @@ namespace WorkShop.Controllers
                         string Upload = Path.Combine(_environment.WebRootPath, "images");
                         filename = product.clientFile.FileName;
                         string FullPath = Path.Combine(Upload, filename);
-                        product.clientFile.CopyTo(new FileStream(FullPath, FileMode.Create));
+                        using (var strem = new FileStream(FullPath, FileMode.Create))
+                        {
+                            product.clientFile.CopyTo(strem);
+                        }
                         existingProduct.imagePath = filename;
                     }
                     existingProduct.Name = product.Name;

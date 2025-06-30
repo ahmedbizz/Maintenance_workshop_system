@@ -1,32 +1,41 @@
-﻿@model IEnumerable<ProductStock>
+﻿@model WorkShop.ViewModel.ProductStockViewModel
 @{
     ViewData["Title"] = "Index";
 }
 
 <div class="row pt-4 align-items-center">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-2">
+            <h1 class="text-primary">Stocks</h1>
+        </div>
+        <div class="col-6 text-center align-items-center">
 
-    <div class="col-6">
-        <h1 class="text-primary">Stocks</h1>
-    </div>
-    <div class="col-6 text-end align-items-center">
-        <a asp-action="Create" asp-controller="ProductStock" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
+            <form class="d-flex">
+                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+        <div class="col-2 text-end align-items-center">
+            <a asp-action="Create" asp-controller="ProductStock" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
 
+        </div>
     </div>
+
 
     <table class="table tab-content shadow m-4 p-2 table-hover">
         <thead>
 
-      
+        <th>Image</th>
         <th>Product</th>
         <th>Store</th>
         <th>Quantity</th>
         <th></th>
         </thead>
         <tbody>
-            @foreach (var stock in Model)
+            @foreach (var stock in Model.ProductStocks)
             {
                 <tr>
-                    
+                    <td width="10%"><img src="~/images/@stock.product?.imagePath" style="width:50px;height:50px" class="shadow" /></td>
                     <td width="20%">@stock.product?.Name</td>
                     <td width="20%">@stock.store?.Name</td>
                     <td width="20%">@stock.quantity</td>
@@ -49,7 +58,17 @@
         </tbody>
 
     </table>
-
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                 
+                </li>
+            }
+        </ul>
+    </nav>
 
 
 </div>
