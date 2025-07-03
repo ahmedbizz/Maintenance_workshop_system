@@ -1,0 +1,78 @@
+﻿@model IEnumerable<WorkShop.ViewModel.CreateGroupViewModel>
+
+
+<div class="d-flex justify-content-between ">
+    <div class="col text-info"> Groups</div>
+    <a class="btn btn-primary" asp-action="Create" asp-controller="Group">Create</a>
+</div>
+<div>
+
+
+    <table id="partsTable" class="table table-hover shadow">
+        <thead>
+            <tr>
+                <th scope="col">Group Name</th>
+                <th scope="col">Description</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Model)
+            {
+                <tr>
+                    <td>@group.Name</td>
+                    <td>@group.Description</td>
+                    <td>
+                        <a asp-controller="Group" asp-action="AssignUsers" asp-route-Id="@group.Id"><i class="bi bi-person-plus-fill text-success"></i></a>
+                        &nbsp;
+                        <a asp-controller="Group" asp-action="AssignRoles" asp-route-Id="@group.Id"><i class="bi bi-person-plus-fill text-success"></i></a>
+                        &nbsp;
+                        <a asp-controller="Group" asp-action="Create" asp-route-Id="@group.Id"><i class=" bi-pencil-square text-primary"></i></a>
+
+                        &nbsp;
+                  
+                            <button type="button" class="btn btn-link p-0 m-0 border-0 text-danger"
+                                    onclick="confirmDelete(@group.Id)">
+                                <i class="bi-trash3"></i>
+                            </button>
+
+                       
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <!-- Modal تأكيد الحذف -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    هل أنت متأكد أنك تريد حذف هذا العنصر؟
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" asp-action="Delete" asp-controller="Group" method="post">
+                        <input type="hidden" name="Id" id="deleteItemId" />
+                        <button type="submit" class="btn btn-danger">نعم، احذف</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <script>
+        function confirmDelete(id) {
+            // تعيين القيمة في الـ input المخفي داخل النموذج
+            document.getElementById('deleteItemId').value = id;
+            // فتح الـ Modal
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}

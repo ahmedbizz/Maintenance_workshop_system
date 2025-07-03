@@ -19,6 +19,10 @@ namespace WorkShop.Repository.Base
         IRepository<ProductStock> productStoks{get;}
         IRepository<Notification> notifications { get; }
 
+       IRepository<Group> groups { get; }
+        IRepository<UserGroup> userGroups { get; }
+        IRepository<GroupRole> groupRoles { get; }
+
         int CommitChanges();
 
         Task CompleteAsync();

@@ -1,0 +1,73 @@
+﻿@model WorkShop.ViewModel.AddUserToGroup
+
+@{
+    ViewData["Title"] = "Assign Users to Group";
+    var availableUsers = (SelectList)ViewBag.Users;
+}
+
+<h2 class="mb-4 text-primary">🛡️ Assign Users to Group: <span class="text-dark">@Model.GroupName</span></h2>
+
+<form asp-action="AssignUsers" method="post" asp-controller="Group" id="assignUsersForm">
+    <input type="hidden" asp-for="GroupId" />
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Available Users</label>
+        <div class="row">
+            @foreach (var user in availableUsers)
+            {
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input role-checkbox"
+                               type="checkbox"
+                               value="@user.Text"
+                               id="role_@user.Value"
+                               name="UserNames"
+                               @(Model.UserNames.Contains(user.Text) ? "checked" : "")
+                               onchange="updateSelectedUsers()" />
+                        <label class="form-check-label" for="role_@user.Value">
+                            @user.Text
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-bold">✅ Selected Users</label>
+        <ul class="list-group" id="selectedUsersList">
+            @foreach (var selectedUser in Model.UserNames)
+            {
+                <li class="list-group-item">@selectedUser</li>
+            }
+        </ul>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">💾 Assign Users</button>
+        <a asp-action="Index" asp-controller="Group" class="btn btn-secondary">← Back</a>
+    </div>
+</form>
+@section Scripts {
+    <script>
+        function updateSelectedUsers() {
+            const checkboxes = document.querySelectorAll('.role-checkbox');
+            const selectedList = document.getElementById('selectedUsersList');
+
+
+            selectedList.innerHTML = '';
+            // إضافة العناصر المختارة
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const li = document.createElement('li');
+                    li.className = "list-group-item";
+                    li.textContent = cb.value;
+                    selectedList.appendChild(li);
+                }
+            });
+        }
+
+        // تحديث القائمة عند التحميل لو كان فيه صلاحيات مختارة مسبقًا
+        window.onload = updateSelectedUsers;
+    </script>
+}

@@ -1,0 +1,73 @@
+﻿@model WorkShop.ViewModel.AssignRolesToGroupViewModel
+
+@{
+    ViewData["Title"] = "Assign Roles to Group";
+    var availableRoles = (SelectList)ViewBag.Rols;
+}
+
+<h2 class="mb-4 text-primary">🛡️ Assign Roles to Group: <span class="text-dark">@Model.GroupName</span></h2>
+
+<form asp-action="AssignRoles" method="post" asp-controller="Group" id="assignRolesForm">
+    <input type="hidden" asp-for="GroupId" />
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Available Roles</label>
+        <div class="row">
+            @foreach (var role in availableRoles)
+            {
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input role-checkbox"
+                               type="checkbox"
+                               value="@role.Text"
+                               id="role_@role.Value"
+                               name="RoleNames"
+                               @(Model.RoleNames.Contains(role.Text) ? "checked" : "")
+                               onchange="updateSelectedRoles()" />
+                        <label class="form-check-label" for="role_@role.Value">
+                            @role.Text
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-bold">✅ Selected Roles</label>
+        <ul class="list-group" id="selectedRolesList">
+            @foreach (var selectedRole in Model.RoleNames)
+            {
+                <li class="list-group-item">@selectedRole</li>
+            }
+        </ul>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">💾 Assign Roles</button>
+        <a asp-action="Index" asp-controller="Group" class="btn btn-secondary">← Back</a>
+    </div>
+</form>
+@section Scripts {
+    <script>
+        function updateSelectedRoles() {
+            const checkboxes = document.querySelectorAll('.role-checkbox');
+            const selectedList = document.getElementById('selectedRolesList');
+
+
+            selectedList.innerHTML = '';
+            // إضافة العناصر المختارة
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const li = document.createElement('li');
+                    li.className = "list-group-item";
+                    li.textContent = cb.value;
+                    selectedList.appendChild(li);
+                }
+            });
+        }
+
+        // تحديث القائمة عند التحميل لو كان فيه صلاحيات مختارة مسبقًا
+        window.onload = updateSelectedRoles;
+    </script>
+}

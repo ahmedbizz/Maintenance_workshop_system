@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkShop.Context;
 
@@ -11,9 +12,11 @@ using WorkShop.Context;
 namespace WorkShop.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250703062514_Groups_Security_Tables")]
+    partial class Groups_Security_Tables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -718,15 +721,17 @@ namespace WorkShop.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId1")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GroupId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId1");
 
                     b.ToTable("userGroups");
                 });
@@ -1020,10 +1025,9 @@ namespace WorkShop.Migrations
                         .IsRequired();
 
                     b.HasOne("WorkShop.Models.User", "User")
-                        .WithMany("UserGroups")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("UserId1")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Group");
 
@@ -1079,8 +1083,6 @@ namespace WorkShop.Migrations
 
             modelBuilder.Entity("WorkShop.Models.User", b =>
                 {
-                    b.Navigation("UserGroups");
-
                     b.Navigation("orders");
                 });
 #pragma warning restore 612, 618

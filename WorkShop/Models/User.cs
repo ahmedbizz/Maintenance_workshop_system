@@ -30,6 +30,7 @@ namespace WorkShop.Models
         public Department? department { get; set; }
 
         public ICollection<Order>? orders { get; set; }
+        public ICollection<UserGroup> UserGroups { get; set; }
 
     }
 }

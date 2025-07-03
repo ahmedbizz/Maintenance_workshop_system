@@ -21,6 +21,9 @@ namespace WorkShop.Repository
             deviceLogs = new MainRepository<DeviceLogs>(_Context);
             sparePartRequests = new MainRepository<SparePartRequest>(_Context);
             sparePartItems = new MainRepository<SparePartItem>(_Context);
+            groups = new MainRepository<Group>(_Context);
+            userGroups = new MainRepository<UserGroup>(_Context);
+            groupRoles = new MainRepository<GroupRole>(_Context);
         }
         private readonly AppDbContext _Context;
         public IRepository<User> users { get; set; }
@@ -44,6 +47,13 @@ namespace WorkShop.Repository
        
         public IRepository<SparePartRequest> sparePartRequests { get; set; }
         public IRepository<SparePartItem> sparePartItems { get; private set; }
+
+        public IRepository<Group> groups { get; private set; }
+
+        public IRepository<UserGroup> userGroups { get; private set; }
+
+        public IRepository<GroupRole> groupRoles { get; private set; }
+
         public int CommitChanges()
         {
             return _Context.SaveChanges();

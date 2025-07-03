@@ -23,6 +23,11 @@ namespace WorkShop.Context
         public DbSet<DeviceLogs> deviceLogs { get; set; }
         public DbSet<SparePartRequest> sparePartRequests { get; set; }
         public DbSet<Notification> notifications { get; set; }
+
+
+        public DbSet<Group> groups { get; set; }
+        public DbSet<UserGroup> userGroups { get; set; }
+        public DbSet<GroupRole> groupRoles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
