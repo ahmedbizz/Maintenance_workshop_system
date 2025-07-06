@@ -1080,7 +1080,7 @@ namespace WorkShop.Controllers
             return View(requsets);
         }
         [HttpPost]
-        [Authorize(Roles = "StoreKeeper")]
+        [Authorize(Roles = "Stock")]
         public async Task<IActionResult> Deliver(int RequestId)
         {
             var request = _unitOfWork.sparePartRequests.FindAll("Items.Product")

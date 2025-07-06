@@ -5,43 +5,75 @@
     var availableUsers = (SelectList)ViewBag.Users;
 }
 
-<h2 class="mb-4 text-primary">🛡️ Assign Users to Group: <span class="text-dark">@Model.GroupName</span></h2>
+<h2 class="mb-4 text-primary"><i class="bi bi-shield-check"></i> Assign Users to Group: <span class="text-dark">@Model.GroupName</span></h2>
 
+
+
+
+    <div class="d-flex justify-content-center align-items-center">
+
+        <div class="col-6 text-center align-items-center">
+
+            <form class="d-flex">
+                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+
+    </div>
 <form asp-action="AssignUsers" method="post" asp-controller="Group" id="assignUsersForm">
     <input type="hidden" asp-for="GroupId" />
 
     <div class="mb-3">
         <label class="form-label fw-bold">Available Users</label>
-        <div class="row">
-            @foreach (var user in availableUsers)
+        <table class="table table-hover shadow">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>User</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var user in  availableUsers)
             {
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input class="form-check-input role-checkbox"
-                               type="checkbox"
-                               value="@user.Text"
-                               id="role_@user.Value"
-                               name="UserNames"
-                               @(Model.UserNames.Contains(user.Text) ? "checked" : "")
-                               onchange="updateSelectedUsers()" />
-                        <label class="form-check-label" for="role_@user.Value">
-                            @user.Text
-                        </label>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
+                <tr>
+    
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input role-checkbox"
+                                       type="checkbox"
+                                       value="@user.Value"
+                                       id="role_@user.Value"
+                                       name="UserNames"
+                                       @(Model.UserNames.Contains(user.Text) ? "checked" : "")
+                                       onchange="updateSelectedUsers()" />
+            
+                            </div>
+                        </td>
+                        <td>
+                            <label class="form-check-label" for="role_@user.Value">
+                                @user.Text
 
-    <div class="mb-4">
-        <label class="form-label fw-bold">✅ Selected Users</label>
-        <ul class="list-group" id="selectedUsersList">
-            @foreach (var selectedUser in Model.UserNames)
+                            </label>
+                        </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+    </div>
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
             {
-                <li class="list-group-item">@selectedUser</li>
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
             }
         </ul>
-    </div>
+    </nav>
+
+
 
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-success">💾 Assign Users</button>

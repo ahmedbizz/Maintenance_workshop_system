@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Data;
 using System.Threading.Tasks;
 using WorkShop.Models;
 using WorkShop.Repository;
@@ -67,7 +68,8 @@ namespace WorkShop.Controllers
          
             var existingGroup = _unitOfWork.groups.FindById(model.Id);
             if (!ModelState.IsValid)
-            { return View(model); }
+            { 
+                return View(model); }
 
                 if (existingGroup != null)
                 {
@@ -105,8 +107,8 @@ namespace WorkShop.Controllers
             }
             if(group.GroupRoles.Any() || group.UserGroups.Any())
             {
-                ModelState.AddModelError("", "Cannot delete group with existing roles or users.");
-                return View("Index", _unitOfWork.groups.FindAll());
+                TempData["Massege"] = "Cannot delete group with existing roles or users.";
+                return RedirectToAction("Index");
             }
             _unitOfWork.groups.Delete(group);
             await _unitOfWork.CompleteAsync();
@@ -115,7 +117,7 @@ namespace WorkShop.Controllers
 
         [HttpGet]
 
-        public async Task<IActionResult> AssignRoles(int? Id)
+        public async Task<IActionResult> AssignRoles(int? Id, string searchTerm, int page = 1)
         {
             
 
@@ -129,8 +131,21 @@ namespace WorkShop.Controllers
             {
                 return NotFound();
             }
-            ViewBag.Rols = new SelectList(_roleManager.Roles, "Id", "Name");
-            var assignRoles = _unitOfWork.groupRoles.FindAll().Where(g => g.GroupId == group.Id)
+
+            int pageSize = 10;
+
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                        _roleManager.Roles :
+                        _roleManager.Roles.Where(r => r.Name.Contains(searchTerm));
+            var totalitem = query.Count();
+
+            var rols = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+
+
+            ViewBag.Rols = new SelectList(rols, "Id", "Name");
+            var assignRoles = _unitOfWork.groupRoles.FindAll()
+                .Where(g => g.GroupId == group.Id)
                 .Select(gr => _roleManager.Roles.FirstOrDefault(r => r.Id == gr.RoleId)?.Name)
                 .Where(roleName => roleName != null).ToList();
             var model = new AssignRolesToGroupViewModel
@@ -162,6 +177,10 @@ namespace WorkShop.Controllers
                     _unitOfWork.groupRoles.Delete(groupRole);
                 }
             }
+
+
+            var users = _unitOfWork.users.FindAll("UserGroups")
+                .Where(u => u.UserGroups.Any(ug => ug.GroupId == group.Id)).ToList();
             // Assign new roles
             foreach (var role in model.RoleNames)
             {
@@ -172,7 +191,21 @@ namespace WorkShop.Controllers
                 var groupRole = new GroupRole { GroupId = Id, RoleId = (await _roleManager.FindByNameAsync(role)).Id };
 
                 _unitOfWork.groupRoles.Insert(groupRole);
+
+
             }
+
+            foreach (var user in users)
+            {
+              await  UpdateUserRolsFromGrooup(user);
+            }
+
+
+
+
+
+
+
 
 
             await _unitOfWork.CompleteAsync();
@@ -181,20 +214,31 @@ namespace WorkShop.Controllers
 
         [HttpGet]
 
-        public async Task<IActionResult> AssignUsers(int? Id)
+        public async Task<IActionResult> AssignUsers(int? Id, string searchTerm, int page = 1)
         {
+
             if (Id == null)
             {
                 return NotFound();
             }
             var group = _unitOfWork.groups.FindAll("UserGroups")
-               .SingleOrDefault(g => g.Id == Id);
+                        .SingleOrDefault(g => g.Id == Id);
             if (group == null)
             {
                 return NotFound();
             }
-            ViewBag.Users = new SelectList(_unitOfWork.users.FindAll(), "Id", "Name");
-            var assignUser = _unitOfWork.userGroups.FindAll()
+
+            int pageSize = 10;
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                _unitOfWork.users.FindAll() :
+                _unitOfWork.users.SearchBycondition(u => u.Email.Contains(searchTerm));
+            var totalitem = query.Count();
+
+            var users = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+ 
+            ViewBag.Users = new SelectList(users, "Id", "Email");
+            var assignUser = _unitOfWork.userGroups.FindAll("User")
                 .Where(g => g.GroupId == group.Id)
               .Select(r => r.User.UserName)
                 .Where(Name => Name != null).ToList();
@@ -207,49 +251,90 @@ namespace WorkShop.Controllers
                 UserNames = assignUser!,
 
             };
-
+   
             return View(model);
         }
 
-        //[HttpPost]
+        [HttpPost]
 
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> AssignUsers(int Id, AssignRolesToGroupViewModel model)
-        //{
-        //    var group = _unitOfWork.groups.FindAll("GroupRoles").
-        //                        SingleOrDefault(g => g.Id == Id);
-        //    if (group == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    if (group.GroupRoles.Any())
-        //    {
-        //        // Remove existing roles
-        //        foreach (var groupRole in group.GroupRoles.ToList())
-        //        {
-        //            _unitOfWork.groupRoles.Delete(groupRole);
-        //        }
-        //    }
-        //    // Assign new roles
-        //    foreach (var role in model.RoleNames)
-        //    {
-        //        if (!await _roleManager.RoleExistsAsync(role))
-        //        {
-        //            await _roleManager.CreateAsync(new IdentityRole(role));
-        //        }
-        //        var groupRole = new GroupRole { GroupId = Id, RoleId = (await _roleManager.FindByNameAsync(role)).Id };
-
-        //        _unitOfWork.groupRoles.Insert(groupRole);
-        //    }
-
-
-        //    await _unitOfWork.CompleteAsync();
-        //    return RedirectToAction("Index");
-        //}
- 
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignUsers(int Id, AddUserToGroup model)
+        {
+            var group = _unitOfWork.groups.FindAll("UserGroups").
+                                SingleOrDefault(g => g.Id == Id);
+            if (group == null)
+            {
+                return NotFound();
+            }
+            if (group.UserGroups.Any())
+            {
+                // Remove existing roles
+                foreach (var userGroup in group.UserGroups.ToList())
+                {
+                    _unitOfWork.userGroups.Delete(userGroup);
+                }
+            }
+            // Assign new User
+            // Assign new User
+            foreach (var userName in model.UserNames)
+            {
+                var user = await _userManager.FindByIdAsync(userName);
+                if (user != null)
+                {
+                    _unitOfWork.userGroups.Insert(new UserGroup
+                    {
+                        GroupId = group.Id,
+                        UserId = user.Id
+                    });
+                    await UpdateUserRolsFromGrooup(user);
+                }
+            }
 
 
-}
+
+            await _unitOfWork.CompleteAsync();
+            return RedirectToAction("Index");
+        }
+
+        private async Task UpdateUserRolsFromGrooup(User user)
+        {
+            var grupIds = _unitOfWork.userGroups.FindAll()
+                .Where(g => g.UserId == user.Id)
+                .Select(g => g.GroupId)
+                .ToList();
+
+            var RolsfromGroup = _unitOfWork.groupRoles.FindAll("Role")
+                .Where(r => grupIds.Contains(r.GroupId))
+                .Select(r => r.Role.Name)
+                .Distinct()
+                .ToList();
+
+            var currentRols = await _userManager.GetRolesAsync(user);
+
+            var toRemove = currentRols.Except(RolsfromGroup).ToList();
+
+            if (toRemove.Any())
+            {
+                foreach (var item in toRemove)
+                {
+                    await _userManager.RemoveFromRoleAsync(user, item);
+                }
+                
+            }
+
+            // To add Roles 
+            var toAdd = RolsfromGroup.Except(currentRols).ToList();
+            if (toAdd.Any())
+            {
+                foreach (var item in toAdd)
+                {
+                    await _userManager.AddToRoleAsync(user, item);
+                }
+               
+            }
+        }
+
+    }
 
 
 

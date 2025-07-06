@@ -6,7 +6,7 @@
         Pending,
         AwaitingTechnician,
         AwaitingEngineer,
-            ApprovedByEngineer,
+        ApprovedByEngineer,
             RejectedByEngineer,
             AwaitingOfficer,
             ApprovedByOfficer,
