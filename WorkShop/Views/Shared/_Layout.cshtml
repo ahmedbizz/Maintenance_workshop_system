@@ -14,7 +14,6 @@
         notifications = _unitOfWork.notifications.FindAll()
             .Where(n => n.ReceiverId == currentUser.Id && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
-            .Take(5)
             .ToList();
 
         unreadCount = notifications.Count;
@@ -60,8 +59,7 @@
 
                         @if (User.Identity.IsAuthenticated)
                         {
-                            @* روابط بحسب الدور *@
-                            @if (User.IsInRole("Engineer"))
+                            @if (User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">الإدارة</a>
@@ -73,27 +71,37 @@
                                         <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">توزيع الصلاحيات</a></li>
                                     </ul>
                                 </li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="Index">المخزن</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">المنتجات</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="ProductStock" asp-action="Index">المخزون</a></li>
+                            }
+                            @* روابط بحسب الدور *@
+                            @if (User.IsInRole(Roles.Engineer))
+                            {
+
+
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="AddDevice">تذكرة صيانة</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="ReviewPartsRequests">طلبات قطع الغيار</a></li>
                             }
-                            @if (User.IsInRole("Technion") || User.IsInRole("Engineer"))
+                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="Index">الأجهزة</a></li>
                             }
-                            @if (User.IsInRole("Technion"))
+                            @if (User.IsInRole(Roles.Technion))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="TechnicionDevices">أجهزتي</a></li>
                             }
-                            @if (User.IsInRole("Officer"))
+                            @if (User.IsInRole(Roles.Officer))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="ReviewPartsRequestsByOfficer">طلبات قطع الغيار</a></li>
                             }
-                            @if (User.IsInRole("StoreKeeper"))
+                            @if (User.IsInRole(Roles.StoreKeeper))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="PendingDeliveries">طلبات  صرف قطع الغيار</a></li>
+                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="PendingDeliveries">طلبات  صرف قطع الغيار</a></li> 
+                            }
+                            @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Officer))
+                            {
+                              
+                                <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="Index">المخزن</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">المنتجات</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="ProductStock" asp-action="Index">المخزون</a></li>
                             }
                         }
 
@@ -131,15 +139,15 @@
                                             if (n.DeviceId > 0)
                                             {
                                                 // تحديد الرابط حسب نوع المستخدم
-                                                if (User.IsInRole("Officer"))
+                                                if (User.IsInRole(Roles.Officer))
                                                 {
                                                     url = Url.Action("ReviewPartsRequestsByOfficer", "Device");
                                                 }
-                                                if (User.IsInRole("Engineer"))
+                                                if (User.IsInRole(Roles.Engineer))
                                                 {
                                                     url = Url.Action("ReviewPartsRequests", "Device");
                                                 }
-                                                else if (User.IsInRole("Technion"))
+                                                else if (User.IsInRole(Roles.Technion))
                                                 {
                                                     url = Url.Action("TechnicionDevices", "Device");
                                                 }
@@ -167,9 +175,7 @@
                                     {
                                         <li><span class="dropdown-item text-muted">لا توجد إشعارات جديدة</span></li>
                                     }
-                                    <li>
-                                        <a class="dropdown-item text-center text-primary" asp-controller="Notification" asp-action="Index">عرض الكل</a>
-                                    </li>
+                            
                                 </ul>
                             </li>
 
@@ -179,10 +185,13 @@
                                     <img src="@(currentUser?.imagePath != null ? Url.Content("~/images/" + currentUser.imagePath) : Url.Content("~/images/user.png"))"
                                          class="rounded-circle me-2 border"
                                          style="width: 40px; height: 40px; object-fit: cover;" />
-                                    <span>@currentUser?.UserName</span>
+                                    <span>
+                                        @((currentUser?.FullName?.Length > 15) ? currentUser.FullName.Substring(0, 15) + "..." : currentUser?.FullName)
+                                    </span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile">الملف الشخصي</a></li>
+
+                                    <li> <a asp-controller="User" class="dropdown-item text-primary" asp-action="Create_user_Edite" asp-route-Id="@currentUser.Id">الملف الشخصي</a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">

@@ -21,7 +21,7 @@ namespace WorkShop.Controllers
 
 
 
-    [Authorize(Roles = "Technion,Engineer,Officer,StoreKeeper")]
+    [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + "," +Roles.Technion+"," +Roles.StoreKeeper)]
     public class DeviceController : Controller
     {
 
@@ -56,7 +56,7 @@ namespace WorkShop.Controllers
             return View(viewModel);
         }
         [HttpGet]
-        [Authorize(Roles = "Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> AddDevice()
         {
             var Tech_ALL= await _userManager.GetUsersInRoleAsync("Technion");
@@ -89,7 +89,7 @@ namespace WorkShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> AddDevice(AddDeviceViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -207,7 +207,8 @@ namespace WorkShop.Controllers
 
 
         //================ Technicion=========================
-
+  
+        [Authorize(Roles = Roles.Technion)]
         public async Task<IActionResult> TechnicionDevices()
         {
 
@@ -222,6 +223,7 @@ namespace WorkShop.Controllers
             return View(devices);
         }
         [HttpGet]
+        [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + "," + Roles.Technion)]
         public async Task<IActionResult> DeviceDetails(int? Id)
         {
             try { 
@@ -312,6 +314,7 @@ namespace WorkShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.Technion)]
         public async Task<IActionResult> SubmitReport(DeviceDetailsViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -500,7 +503,7 @@ namespace WorkShop.Controllers
 
 
         [HttpGet]
-        [Authorize(Roles ="Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> ReviewPartsRequests(string searchTerm , int page =1)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -529,7 +532,7 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> DetailsPartsRequests(int Id)
         {
             var request = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product").FirstOrDefault(r => r.Id == Id && r.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString());
@@ -548,7 +551,7 @@ namespace WorkShop.Controllers
             return View(request);
         }
 
-        [Authorize(Roles = "Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> ApproveParts(int Id)
         {
             var engineer = await _userManager.GetUserAsync(User);
@@ -623,7 +626,7 @@ namespace WorkShop.Controllers
         }
 
 
-        [Authorize(Roles = "Engineer")]
+        [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> RejectParts(int Id)
         {
             var engineer = await _userManager.GetUserAsync(User);
@@ -667,7 +670,7 @@ namespace WorkShop.Controllers
 
         //============================ Manager ========================
         [HttpGet]
-        [Authorize(Roles = "Officer")]
+        [Authorize(Roles = Roles.Officer)]
         public async Task<IActionResult> ReviewPartsRequestsByOfficer()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -677,7 +680,7 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Officer")]
+        [Authorize(Roles = Roles.Officer)]
         public async Task<IActionResult> DetailsPartsRequestsByOfficer(int Id)
         {
             var request = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product").FirstOrDefault(r => r.Id == Id && r.MaintenanceCard.Status == "ApprovedByEngineer");
@@ -685,7 +688,7 @@ namespace WorkShop.Controllers
 
             return View(request);
         }
-        [Authorize(Roles = "Officer")]
+        [Authorize(Roles = Roles.Officer)]
         public async Task<IActionResult> ApproveByOfficer(int Id)
         {
 
@@ -699,7 +702,8 @@ namespace WorkShop.Controllers
             request.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
             request.ManagerId = Officer.Id;
             card.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
-           
+            var StoreAdmins = await _userManager.GetUsersInRoleAsync(Roles.StoreKeeper);
+            var Storeuser = StoreAdmins.Where(s => s.DepartmentId == device.DepartmentId);
             await _unitOfWork.deviceLogs.AddAsync(
                 new DeviceLogs
                 {
@@ -722,6 +726,17 @@ namespace WorkShop.Controllers
                 CreatedAt = DateTime.Now
             });
 
+            foreach (var user in Storeuser)
+            {
+                _unitOfWork.notifications.Insert(new Notification
+                {
+                    Title = " صرف قطع",
+                    Message = "وافق الضابط على طلب قطع الغيار.",
+                    ReceiverId = user.Id,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
             _unitOfWork.notifications.Insert(new Notification
             {
                 Title = "تمت الموافقة على طلبك",
@@ -737,7 +752,7 @@ namespace WorkShop.Controllers
 
         }
 
-        [Authorize(Roles = "Officer")]
+        [Authorize(Roles = Roles.Officer)]
         [HttpPost]
         public async Task<IActionResult> RejectByOfficer(int Id)
         {
@@ -1080,8 +1095,8 @@ namespace WorkShop.Controllers
             return View(requsets);
         }
         [HttpPost]
-        [Authorize(Roles = "Stock")]
-        public async Task<IActionResult> Deliver(int RequestId)
+        [Authorize(Roles = Roles.StoreKeeper)]
+        public async Task<IActionResult> PendingDeliveries(int RequestId)
         {
             var request = _unitOfWork.sparePartRequests.FindAll("Items.Product")
                             .FirstOrDefault(r => r.Id == RequestId);
@@ -1107,6 +1122,13 @@ namespace WorkShop.Controllers
             request.Status = MaintenanceStatus.Delivered.ToString();
             request.IsFinalized = true;
             var StoreKeeper = await _userManager.GetUserAsync(User);
+            var device = _unitOfWork.devices.FindById(request.DeviceId);
+            if (device == null)
+            {
+                return NotFound("Device not found.");
+            }
+            var engnieers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
+            var engineer = engnieers.FirstOrDefault(e => e.DepartmentId == device.DepartmentId);
             await _unitOfWork.deviceLogs.AddAsync(
                 new DeviceLogs
                 {
@@ -1128,6 +1150,17 @@ namespace WorkShop.Controllers
                 ReceiverId = request.RequestedById,
                 CreatedAt = DateTime.Now
             });
+         
+            
+                _unitOfWork.notifications.Insert(new Notification
+                {
+                    Title = "تم صرف  قطع الغيار",
+                    Message = "تم صرف  طلب قطع الغيار من قبل امين المستودع",
+                    ReceiverId = engineer.Id,
+                    CreatedAt = DateTime.Now
+                });
+            
+
 
             _unitOfWork.notifications.Insert(new Notification
             {

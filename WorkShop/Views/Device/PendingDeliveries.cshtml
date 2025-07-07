@@ -17,14 +17,34 @@
 }
 @if (TempData["Success"] != null)
 {
-<div class="col-lg-4">
-    <div class="bs-component">
-        <div class="alert alert-dismissible alert-success">
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                <strong>Well done!</strong> @TempData["Success"].
+
+
+
+
+    <div class="modal fade" id="SuccessModal" tabindex="-1" aria-labelledby="SuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content shadow">
+
+                <div class="col-lg-4">
+                    <div class="bs-component">
+                        <div class="alert alert-dismissible alert-success">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            <strong>Well done!</strong> @TempData["Success"].
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                 
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+
+
 }
 <table class="table">
     <thead>
@@ -50,12 +70,60 @@
                 </td>
                 <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
                 <td>
-                    <form asp-action="Deliver" asp-controller="Device" method="post">
-                        <input type="hidden" name="RequestId" value="@req.Id" />
-                        <button type="submit" class="btn btn-success">صرف القطع</button>
-                    </form>
+                  
+                       
+                        <button type="submit"onclick="confirmation(@req.Id)"  class="btn btn-success">صرف القطع</button>
+                 
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+
+    <!-- Modal تأكيد صرف -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">تأكيد صرف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                         <div class="modal-body">
+                    هل أنت متأكد أنك تريد صرف هذه العناصر؟
+                </div>
+                  
+                
+                <div class="modal-footer">
+                <form asp-action="PendingDeliveries" asp-controller="Device" method="post">
+                    <input type="hidden" name="RequestId" id="confirmItemId" />
+                  @if (TempData["Massege"] == null)
+                    {
+
+                        <button type="submit" onclick="Success()" class="btn btn-danger">نعم</button>
+                    }
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+@section Scripts {
+    <script>
+        function confirmation(id) {
+            // تعيين القيمة في الـ input المخفي داخل النموذج
+            document.getElementById('confirmItemId').value = id;
+            // فتح الـ Modal
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+                function Success() {
+
+            // فتح الـ Modal
+            var confirmModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
+            confirmModal.show();
+        }
+    </script>
+}
+

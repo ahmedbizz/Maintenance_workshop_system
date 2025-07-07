@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Threading.Tasks;
 using WorkShop.Context;
+using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
@@ -85,7 +86,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Create_user_Edite(User user)
         {
             ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
-
+            var currentUser = await _userManager.GetUserAsync(User);
             if (!ModelState.IsValid)
                 return View(user);
 
@@ -124,7 +125,7 @@ namespace WorkShop.Controllers
                         ModelState.AddModelError("", error.Description);
                     return View(user);
                 }
-
+            
                 return RedirectToAction("Index");
             }
             else
@@ -153,7 +154,10 @@ namespace WorkShop.Controllers
                     return View(user);
                 }
 
-                return RedirectToAction("Index");
+                if (User.IsInRole(Roles.Admin))
+                    return RedirectToAction("Index", "User");
+                else
+                    return RedirectToAction("Index", "Home");
             }
         }
 

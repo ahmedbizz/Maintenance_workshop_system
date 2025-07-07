@@ -1,8 +1,15 @@
-﻿@model User
+﻿@using Microsoft.AspNetCore.Identity
+@using WorkShop.Enums
+@inject UserManager<User> UserManager
+@inject SignInManager<User> SignInManager
+@model User
 @{
     ViewData["Title"] = "Create";
 }
+@{
+    var currentUser = UserManager.GetUserAsync(User).Result;
 
+}
 
 <div class="container p-4">
 
@@ -14,10 +21,7 @@
 
         <form method="post" asp-controller="User" asp-action="Create_user_Edite" enctype="multipart/form-data" >
             <div class="border p-3 mt4">
-                <div class="row pb-2 text-center">
-                    <h2 class="text-primary">Create new User</h2>
-                    <hr />
-                </div>
+
 
                 <div class="mb-3 text-center">
 
@@ -25,7 +29,7 @@
                     <br />
                     <img class=" shadow  " id="proImg" src="@(Model?.imagePath != null ? Url.Content("~/images/" + Model.imagePath) : Url.Content("~/images/user.png"))"
                          height="150px" class="img-thumbnail mt-2"
-                         style="cursor: pointer;"
+                         style="cursor: pointer;border-radius:150px"
                          onclick="document.getElementById('imageInput').click();" />
                 </div>
                 <div class=" mb-3">
@@ -33,11 +37,36 @@
                     <input asp-for="FullName" class="form-control" />
                     <span asp-validation-for="FullName" class="text-danger"></span>
                 </div>
-                <div class=" mb-3">
-                    <label asp-for="Email"></label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
+                  <div class=" mb-3">
+                        <label asp-for="Email"></label>
+                    @if (User.IsInRole(Roles.Admin))
+                    {
+                        <input asp-for="Email" class="form-control" />
+                    }
+                    else
+                    {
+                        <input asp-for="Email" class="form-control" readonly />
+                    }
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class=" mb-3">
+                        <label asp-for="DepartmentId" class="form-label">Depatment</label>
+                    @if (User.IsInRole(Roles.Admin))
+                    {
+                        <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments">
+                            <option value="">--Select one--</option>
+                        </select>
+                    }
+                    else
+                    {
+                        <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments" disabled>
+                            <option value="">--Select one--</option>
+                        </select>
+                        <input type="hidden" asp-for="DepartmentId" />
+                    }
+                    <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                    </div>
+                
 
                 <div class=" mb-3">
                     <label asp-for="PhoneNumber"></label>
@@ -46,16 +75,17 @@
                 </div>
 
 
-                <div class=" mb-3">
-                    <label asp-for="DepartmentId" class="form-label">Depatment</label>
-                    <select asp-for="DepartmentId" class="form-control" asp-items= "ViewBag.Departments">
-                        <option value="">--Select one--</option>
-                    </select>
-                    <span asp-validation-for="DepartmentId" class="text-danger"></span>
-                </div>
+
                 <div class="mb-3 text-center ">
                     <button type="submit" class="btn btn-success" style="width:150px">Save</button>
-                    <a asp-action="Index" asp-controller="User" class="btn btn-primary" style="width:150px">Back</a>
+                    @if (User.IsInRole(Roles.Admin))
+                     {
+                        <a asp-action="Index" asp-controller="User" class="btn btn-primary" style="width:150px">Back</a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" asp-controller="Home" class="btn btn-primary" style="width:150px">Back</a>
+                    }
                 </div>
 
             </div>
