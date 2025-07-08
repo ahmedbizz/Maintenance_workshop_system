@@ -48,12 +48,12 @@
 
     }
 
-<a class="btn btn-primary btn-sm" asp-action="ReviewPartsRequestsByOfficer" asp-controller="Device">Back</a>
+<a class="btn btn-primary btn-sm" asp-action="ReviewPartsRequestsByOfficer" asp-controller="Officer">Back</a>
 
-                        <form method="post" asp-action="ApproveByOfficer" asp-route-id="@Model.Id" style="display:inline-block">
+                        <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@Model.Id" style="display:inline-block">
                             <button class="btn btn-success btn-sm">موافقة</button>
                         </form>
-                        <form method="post" asp-action="RejectByOfficer" asp-route-id="@Model.Id" style="display:inline-block">
+                        <form method="post" asp-action="RejectByOfficer" asp-controller="Officer" asp-route-id="@Model.Id" style="display:inline-block">
                             <button class="btn btn-danger btn-sm">رفض</button>
                         </form>
 </div>

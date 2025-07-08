@@ -61,7 +61,7 @@
 
     @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed))
     {
-        <form asp-action="SubmitReport" asp-controller="Device" method="post">
+        <form asp-action="SubmitReport" asp-controller="DeviceReport" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="DeviceId" />
             <input type="hidden" asp-for="SerialNumber" />
@@ -235,7 +235,7 @@
         <div class="alert alert-info mt-4 text-center">لا يمكنك تعديل التقرير.</div>
     }
 
-    <form id="deleteForm" asp-controller="Device" asp-action="DeleteItemPart" method="post" class="d-none">
+    <form id="deleteForm" asp-controller="SpareParts" asp-action="DeleteItemPart" method="post" class="d-none">
         @Html.AntiForgeryToken()
         <input type="hidden" name="DeviceId" id="deleteDeviceId" />
         <input type="hidden" name="Id" id="deleteItemId" />

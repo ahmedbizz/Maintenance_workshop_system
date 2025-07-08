@@ -23,16 +23,16 @@
         <tbody>
             @foreach (var device in Model.devices)
             {
-                <tr data-url="@Url.Action("DetailsPartsRequests", "Device", new { id = device.Id })" style="cursor:pointer;">
+                <tr data-url="@Url.Action("DetailsPartsRequests", "Engineer", new { id = device.Id })" style="cursor:pointer;">
                     <td>@device.Product?.Name</td>
                     <td>@device.SerialNumber</td>
                     <td>@device.Technician?.FullName</td>
                     <td>@device.MaintenanceCard?.TechnicianReport</td>
                     <td>
-                        <form method="post" asp-action="ApproveParts" asp-route-id="@device.Id" style="display:inline-block">
+                        <form method="post" asp-action="ApproveParts" asp-controller="Engineer" asp-route-id="@device.Id" style="display:inline-block">
                             <button class="btn btn-success btn-sm">موافقة</button>
                         </form>
-                        <form method="post" asp-action="RejectParts" asp-route-id="@device.Id" style="display:inline-block">
+                        <form method="post" asp-action="RejectParts" asp-controller="Engineer" asp-route-id="@device.Id" style="display:inline-block">
                             <button class="btn btn-danger btn-sm">رفض</button>
                         </form>
                     </td>

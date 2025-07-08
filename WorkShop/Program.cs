@@ -7,6 +7,8 @@ using WorkShop.Context;
 using WorkShop.Models;
 using WorkShop.Repository;
 using WorkShop.Repository.Base;
+using WorkShop.Services;
+using WorkShop.Services.MainService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,10 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 
 builder.Services.AddTransient(typeof(IRepository<>),typeof(MainRepository<>));
 builder.Services.AddTransient<IUnitOfWork,UnitOfWork>();
+
+builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 

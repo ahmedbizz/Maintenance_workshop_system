@@ -62,13 +62,13 @@
                             @if (User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">الإدارة</a>
+                                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Managmenet</a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" asp-controller="Department" asp-action="Index">الأقسام</a></li>
-                                        <li><a class="dropdown-item" asp-controller="User" asp-action="Index">المستخدمين</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">المجموعات</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">الصلاحيات</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">توزيع الصلاحيات</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Department" asp-action="Index">Departmet</a></li>
+                                        <li><a class="dropdown-item" asp-controller="User" asp-action="Index">Users</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">Groups</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">Roles</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers"> Manage Roles</a></li>
                                     </ul>
                                 </li>
                             }
@@ -77,31 +77,31 @@
                             {
 
 
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="AddDevice">تذكرة صيانة</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="ReviewPartsRequests">طلبات قطع الغيار</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="AddDevice">Maintenance ticket </a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Engineer" asp-action="ReviewPartsRequests"> Spare parts requests </a></li>
                             }
                             @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="Index">الأجهزة</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="Index">Devices</a></li>
                             }
                             @if (User.IsInRole(Roles.Technion))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="TechnicionDevices">أجهزتي</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="TechnicionDevices">My Devices</a></li>
                             }
                             @if (User.IsInRole(Roles.Officer))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="ReviewPartsRequestsByOfficer">طلبات قطع الغيار</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Officer" asp-action="ReviewPartsRequestsByOfficer">Spare parts requests</a></li>
                             }
                             @if (User.IsInRole(Roles.StoreKeeper))
                             {
-                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="PendingDeliveries">طلبات  صرف قطع الغيار</a></li> 
+                                <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="PendingDeliveries">Spare parts requests</a></li>
                             }
                             @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Officer))
                             {
                               
-                                <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="Index">المخزن</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">المنتجات</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="ProductStock" asp-action="Index">المخزون</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="Index">WareHuose</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">Products</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="ProductStock" asp-action="Index">Stoks</a></li>
                             }
                         }
 
@@ -121,7 +121,7 @@
                             @* إشعارات *@
                             <li class="nav-item dropdown mx-2">
                                 <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
-                                    🔔
+                                    <i class="bi bi-bell"></i>
                                     @if (unreadCount > 0)
                                     {
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -141,39 +141,45 @@
                                                 // تحديد الرابط حسب نوع المستخدم
                                                 if (User.IsInRole(Roles.Officer))
                                                 {
-                                                    url = Url.Action("ReviewPartsRequestsByOfficer", "Device");
+                                                    url = Url.Action("ReviewPartsRequestsByOfficer", "Officer");
                                                 }
                                                 if (User.IsInRole(Roles.Engineer))
                                                 {
-                                                    url = Url.Action("ReviewPartsRequests", "Device");
+                                                    url = Url.Action("ReviewPartsRequests","Engineer");
                                                 }
                                                 else if (User.IsInRole(Roles.Technion))
                                                 {
                                                     url = Url.Action("TechnicionDevices", "Device");
                                                 }
                                             }
-                                            <li class="dropdown-item @(n.IsRead ? "bg-light" : "bg-light")"
-                                                data-url=@url
-                                                onclick="window.location.href = this.dataset.url"
-                                                style="cursor: pointer;">
-                                                <div class="d-flex justify-content-between">
-                                                <div>
-                                                    <strong>@n.Title</strong><br />
-                                                    @n.Message <br />
-                                                    <small class="text-muted">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
-                                       
+                                            <li >
+                                                <div class="toast show" role="alert">
+                                                    <div class="toast-header">
+                                                        <strong class="me-auto">@n.Title</strong>
+                                                        <small>@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                                        <form asp-action="DeleteNotification" asp-controller="Notification" method="post">
+                                                            <input type="hidden" name="Id" value="@n.Id" />
+                                                            <input hidden name="curentUrl" value="@Context.Request.Path"/>
+                                                            <button type="submit" class="btn-close ms-2 mb-1"  aria-label="Close">
+                                                                <span aria-hidden="true"></span>
+                                                            </button>
+                                                        </form>
+
+                                                    </div>
+                                                    <div class="toast-body"
+                                                         data-url=@url
+                                                         onclick="window.location.href = this.dataset.url"
+                                                         style="cursor: pointer;">
+                                                        @n.Message
+                                                    </div>
                                                 </div>
-                                                <a class="text-danger"
-                                                   onclick="deleteNotification(@n.Id)">
-                                                        <i class="bi bi-x-lg"></i>
-                                                </a>
-                                                </div>
+
                                             </li>
                                         }
                                     }
                                     else
                                     {
-                                        <li><span class="dropdown-item text-muted">لا توجد إشعارات جديدة</span></li>
+                                        <li><span class="dropdown-item text-muted">Notifications it is empty</span></li>
                                     }
                             
                                 </ul>
@@ -191,11 +197,11 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
 
-                                    <li> <a asp-controller="User" class="dropdown-item text-primary" asp-action="Create_user_Edite" asp-route-Id="@currentUser.Id">الملف الشخصي</a></li>
+                                    <li> <a asp-controller="User" class="dropdown-item text-primary" asp-action="Create_user_Edite" asp-route-Id="@currentUser.Id">user profile </a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
-                                            <button class="dropdown-item text-danger">تسجيل الخروج</button>
+                                            <button class="dropdown-item text-danger"> Logout</button>
                                         </form>
                                     </li>
                                 </ul>
@@ -204,8 +210,8 @@
                         }
                         else
                         {
-                            <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">تسجيل الدخول</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">إنشاء حساب</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login"> Login </a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register"> Register</a></li>
                         }
                     </ul>
                 </div>
@@ -226,7 +232,7 @@
     </footer>
     <script>
         function deleteNotification(id) {
-            fetch(`/Device/DeleteNotification/${id}`, {
+            fetch(`/Notification/DeleteNotification/${id}`, {
                 method: 'POST',
                 headers: {
                     'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
