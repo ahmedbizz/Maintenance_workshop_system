@@ -1,129 +1,114 @@
 ﻿@model List<SparePartRequest>
 
-@if (TempData["Massege"] != null)
-{
-    <div class="row">
-        <div class="col-lg-12">
+<div class="container mt-4" dir="ltr">
 
-            <div class="bs-component">
-                <div class="alert alert-dismissible alert-warning">
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    <h4 class="alert-heading">Warning!</h4>
-                    <p class="mb-0">  @TempData["Massege"]</p>
-                </div>
-            </div>
+    @if (TempData["Massege"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Warning:</strong> @TempData["Massege"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    </div>
-}
-@if (TempData["Success"] != null)
-{
+    }
 
-
-
-
-    <div class="modal fade" id="SuccessModal" tabindex="-1" aria-labelledby="SuccessModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content shadow">
-
-                <div class="col-lg-4">
-                    <div class="bs-component">
-                        <div class="alert alert-dismissible alert-success">
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            <strong>Well done!</strong> @TempData["Success"].
-                        </div>
+    @if (TempData["Success"] != null)
+    {
+        <div class="modal fade" id="SuccessModal" tabindex="-1" aria-labelledby="SuccessModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content shadow">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="SuccessModalLabel">Success</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <strong>Well done!</strong> @TempData["Success"]
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
-
-                <div class="modal-footer">
-
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                 
-                </div>
             </div>
         </div>
-    </div>
+    }
 
+    <h3 class="mb-4 text-primary">Spare Parts Requests</h3>
 
-
-}
-<table class="table">
-    <thead>
-        <tr>
-            <th>رقم الجهاز</th>
-            <th>القطع المطلوبة</th>
-            <th>تاريخ الطلب</th>
-            <th>صرف</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var req in Model)
-        {
+    <table class="table table-bordered table-striped align-middle shadow-sm">
+        <thead class="table-dark">
             <tr>
-                <td>@req.Device.SerialNumber</td>
-                <td>
-                    <ul>
-                        @foreach (var item in req.Items)
-                        {
-                            <li>@item.Product.Name - الكمية: @item.Quantity</li>
-                        }
-                    </ul>
-                </td>
-                <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
-                <td>
-                  
-                       
-                        <button type="submit"onclick="confirmation(@req.Id)"  class="btn btn-success">صرف القطع</button>
-                 
-                </td>
+                <th>Device Serial Number</th>
+                <th>Requested Parts</th>
+                <th>Request Date</th>
+                <th>Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var req in Model)
+            {
+                <tr>
+                    <td>@req.Device.SerialNumber</td>
+                    <td>
+                        <ul class="mb-0">
+                            @foreach (var item in req.Items)
+                            {
+                                <li>@item.Product.Name - Qty: @item.Quantity</li>
+                            }
+                        </ul>
+                    </td>
+                    <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <button type="button" onclick="confirmation(@req.Id)" class="btn btn-success">
+                            Deliver Parts
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-
-    <!-- Modal تأكيد صرف -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content shadow">
                 <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">تأكيد صرف</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                    <h5 class="modal-title" id="confirmModalLabel">Confirm Delivery</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                         <div class="modal-body">
-                    هل أنت متأكد أنك تريد صرف هذه العناصر؟
+                <div class="modal-body">
+                    Are you sure you want to deliver these items?
                 </div>
-                  
-                
                 <div class="modal-footer">
-                <form asp-action="PendingDeliveries" asp-controller="Store" method="post">
-                    <input type="hidden" name="RequestId" id="confirmItemId" />
-                  @if (TempData["Massege"] == null)
-                    {
-
-                        <button type="submit" onclick="Success()" class="btn btn-danger">نعم</button>
-                    }
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <form asp-action="PendingDeliveries" asp-controller="Store" method="post">
+                        <input type="hidden" name="RequestId" id="confirmItemId" />
+                        <button type="submit" class="btn btn-danger" onclick="Success()">Yes, Deliver</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
+</div>
+
 @section Scripts {
     <script>
         function confirmation(id) {
-            // تعيين القيمة في الـ input المخفي داخل النموذج
             document.getElementById('confirmItemId').value = id;
-            // فتح الـ Modal
             var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             confirmModal.show();
         }
 
-                function Success() {
-
-            // فتح الـ Modal
-            var confirmModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
-            confirmModal.show();
+        function Success() {
+            var successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
+            successModal.show();
         }
+
+        // Auto show success modal if TempData["Success"] is set
+        document.addEventListener("DOMContentLoaded", function () {
+            var hasSuccess = '@TempData["Success"]' !== '';
+            if (hasSuccess) {
+                var successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
+                successModal.show();
+            }
+        });
     </script>
 }
-

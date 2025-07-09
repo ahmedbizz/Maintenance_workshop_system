@@ -128,9 +128,10 @@ namespace WorkShop.Controllers
                 device.Status = MaintenanceStatus.NeedsParts.ToString();
                 card.Status = MaintenanceStatus.NeedsParts.ToString();
                 card.SparePartsRequestedAt = DateTime.Now;
+                await _unitOfWork.CompleteAsync();
 
                 // سجل الحدث
-                await _logService.LogAsync(
+                var LogTask = _logService.LogAsync(
                     device.Id,
                     "Spare Parts Request",
                     $"Spare Parts Requested By {new string(user.FullName.Take(10).ToArray())}",
@@ -140,12 +141,14 @@ namespace WorkShop.Controllers
                     user.Id);
 
                 // إشعار للمهندس
-                await _notificationService.NotifyUsersAsync(
+                var NotifyEngineer = _notificationService.NotifyUsersAsync(
                       DepartmentManger,
                       "Spare Parts Request",
                       $"Spare parts request for device S/N: {device.SerialNumber}",
                       model.DeviceId
                       );
+
+                await Task.WhenAll(LogTask, NotifyEngineer);
 
             }
 
@@ -164,11 +167,12 @@ namespace WorkShop.Controllers
                 }
 
                 device.Status = MaintenanceStatus.Repaired.ToString();
+                card.ClosedAt = DateTime.Now;
                 card.Status = MaintenanceStatus.Closed.ToString();
                 card.ClosedAt = DateTime.Now;
-
+                await _unitOfWork.CompleteAsync();
                 // سجل الحدث
-                await _logService.LogAsync(
+                var LogTask = _logService.LogAsync(
                     device.Id,
                     "Repaired",
                     $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
@@ -178,24 +182,25 @@ namespace WorkShop.Controllers
                     user.Id);
 
                 // Notefanction Engineer
-                await _notificationService.NotifyUsersAsync(
+                var NotifiyEngineer = _notificationService.NotifyUsersAsync(
                          DepartmentManger,
                         "Repaired",
                         $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
                          model.DeviceId
                       );
                 // Notefanction Officer
-                await _notificationService.NotifyUsersAsync(
+                var NotifyOfficer = _notificationService.NotifyUsersAsync(
                          DepartmentOfficer,
                         "Repaired",
                         $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
                          model.DeviceId
                       );
 
+                await Task.WhenAll(LogTask, NotifiyEngineer, NotifyOfficer);
 
             }
 
-            await _unitOfWork.CompleteAsync();
+     
             return RedirectToAction("DeviceDetails", "Device", new { id = model.DeviceId });
         }
 

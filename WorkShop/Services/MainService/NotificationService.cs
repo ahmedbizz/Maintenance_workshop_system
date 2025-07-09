@@ -1,21 +1,27 @@
 ﻿using WorkShop.Models;
+using WorkShop.Repository;
 using WorkShop.Repository.Base;
 
 namespace WorkShop.Services.MainService
 {
     public class NotificationService : INotificationService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public NotificationService(IUnitOfWork unitOfWork)
+        public NotificationService( IServiceScopeFactory scopeFactory)
         {
-            _unitOfWork = unitOfWork;
+       
+            _scopeFactory = scopeFactory;
         }
 
 
 
         public async Task NotifyUsersAsync(List<User> receivers, string title, string message, int deviceId)
         {
+
+            using var scope = _scopeFactory.CreateScope();
+            var _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             foreach (var user in receivers)
             {
                 var notification = new Notification
@@ -27,6 +33,7 @@ namespace WorkShop.Services.MainService
                     CreatedAt = DateTime.Now
                 };
                 _unitOfWork.notifications.Insert(notification);
+                await _unitOfWork.CompleteAsync();
             }
 
          
@@ -34,8 +41,9 @@ namespace WorkShop.Services.MainService
 
         public async Task NotifyUsersAsync(string receivers, string title, string message, int deviceId)
         {
-         
-                var notification = new Notification
+            using var scope = _scopeFactory.CreateScope();
+            var _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var notification = new Notification
                 {
                     Title = title,
                     Message = message,
@@ -44,7 +52,8 @@ namespace WorkShop.Services.MainService
                     CreatedAt = DateTime.Now
                 };
                 _unitOfWork.notifications.Insert(notification);
-            
+                await _unitOfWork.CompleteAsync();
+
         }
     }
   

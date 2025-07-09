@@ -60,9 +60,9 @@ namespace WorkShop.Controllers
             card.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
             var StoreAdmins = await _userManager.GetUsersInRoleAsync(Roles.StoreKeeper);
             var Storeuser = StoreAdmins.Where(s => s.DepartmentId == device.DepartmentId).ToList();
-
+            await _unitOfWork.CompleteAsync();
             // سجل الحدث
-            await _logService.LogAsync(
+            var logTask = _logService.LogAsync(
                 device.Id,
                 "Spare Parts Approved",
                 $"Spare Parts Approved By Cpt.{new string(Officer.FullName.Take(10).ToArray())}",
@@ -71,7 +71,7 @@ namespace WorkShop.Controllers
                 Roles.Officer,
                 Officer.Id);
             // إشعار الهندس
-            await _notificationService.NotifyUsersAsync(
+            var NotifyEngineer = _notificationService.NotifyUsersAsync(
                    request.ManagerId,
                   "Spare Parts Approved",
                   $"Spare parts approved by Cpt.{new string(Officer.FullName.Take(10).ToArray())} " +
@@ -79,7 +79,7 @@ namespace WorkShop.Controllers
                    request.Device.Id
                   );
             // إشعار الفني
-            await _notificationService.NotifyUsersAsync(
+            var NotifyTechnitain = _notificationService.NotifyUsersAsync(
                   request.RequestedById,
                   "Spare Parts Approved",
                   $"Spare parts approved by Cpt.{new string(Officer.FullName.Take(10).ToArray())} " +
@@ -87,15 +87,17 @@ namespace WorkShop.Controllers
                    request.Device.Id
                   );
             // إشعار المستودع
-            await _notificationService.NotifyUsersAsync(
+             var NotifyStoreUser = _notificationService.NotifyUsersAsync(
                   Storeuser,
                   "Spare Parts Disbursement",
                   $"Spare parts approved by Cpt.{new string(Officer.FullName.Take(10).ToArray())} " +
                   $"for device S/N: {request.Device.SerialNumber}",
                    request.Device.Id
                   );
+     
+            await Task.WhenAll(logTask,NotifyEngineer, NotifyStoreUser, NotifyTechnitain);
 
-            await _unitOfWork.CompleteAsync();
+    
             return RedirectToAction("ReviewPartsRequestsByOfficer");
 
         }
@@ -112,11 +114,10 @@ namespace WorkShop.Controllers
             device.Status = MaintenanceStatus.RejectedByOfficer.ToString();
             request.Status = MaintenanceStatus.RejectedByOfficer.ToString();
             card.Status = MaintenanceStatus.RejectedByOfficer.ToString();
-
+            await _unitOfWork.CompleteAsync();
             var Officer = await _userManager.GetUserAsync(User);
-
             // سجل الحدث
-            await _logService.LogAsync(
+            var LogTask = _logService.LogAsync(
                 device.Id,
                 "Spare Parts rejected",
                 $"Spare Parts rejected By Cpt.{new string(Officer.FullName.Take(10).ToArray())}",
@@ -125,7 +126,7 @@ namespace WorkShop.Controllers
                 Roles.Officer,
                 Officer.Id);
             // إشعار الهندس
-            await _notificationService.NotifyUsersAsync(
+             var NotifyEngineer = _notificationService.NotifyUsersAsync(
                    request.ManagerId,
                   "Spare Parts rejected",
                   $"Spare parts rejected by Cpt.{new string(Officer.FullName.Take(10).ToArray())} " +
@@ -134,15 +135,16 @@ namespace WorkShop.Controllers
                   );
 
             // إشعار الفني
-            await _notificationService.NotifyUsersAsync(
+            var NotifyTechnaition = _notificationService.NotifyUsersAsync(
                   request.RequestedById,
                   "Spare Parts rejected",
                   $"Spare parts rejected by Cpt.{new string(Officer.FullName.Take(10).ToArray())} " +
                   $"for device S/N: {request.Device.SerialNumber}",
                    request.Device.Id
                   );
-
-            await _unitOfWork.CompleteAsync();
+   
+            await Task.WhenAll(LogTask,NotifyEngineer, NotifyTechnaition);
+        
             return RedirectToAction("ReviewPartsRequestsByOfficer");
         }
 

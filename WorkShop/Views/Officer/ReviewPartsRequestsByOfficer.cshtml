@@ -1,34 +1,45 @@
 ﻿@model List<Device>
-
+@using Microsoft.AspNetCore.Identity
+@using WorkShop.Enums
+@inject UserManager<User> UserManager
+@inject SignInManager<User> SignInManager
+@inject WorkShop.Repository.Base.IUnitOfWork _unitOfWork
 <div class="container mt-4">
-    <h2 class="text-primary">طلبات بانتظار موافقة الضابط</h2>
+    <h2 class="text-primary">Requests awaiting officer approval</h2>
     <hr />
     <table class="table table-bordered table-hover">
         <thead class="table-dark">
             <tr>
-                <th>اسم الجهاز</th>
-                <th>الرقم التسلسلي</th>
-                <th>اسم الفني</th>
-                <th>التقرير الفني</th>
-                <th>إجراءات</th>
+                <th>Device </th>
+                <th> S/N</th>
+                <th>Technician</th>
+                <th>Engineer Aproval</th>
+                <th> Report</th>
+                <th>Action</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody
+            @{
+               var engs = await UserManager.GetUsersInRoleAsync(Roles.Engineer);
+             }
+    
             @foreach (var device in Model)
             {
+                
                 <tr data-url=@Url.Action("DetailsPartsRequestsByOfficer", "Officer", new { id = device.Id })
                     onclick="window.location.href = this.dataset.url"
                     style="cursor: pointer;">
                     <td>@device.Product?.Name</td>
                     <td>@device.SerialNumber</td>
                     <td>@device.Technician?.FullName</td>
+                    <td>@engs.FirstOrDefault(eng => eng.Id == device.MaintenanceCard?.EngineerId).FullName</td>
                     <td>@device.MaintenanceCard?.TechnicianReport</td>
                     <td>
                         <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
-                            <button class="btn btn-success btn-sm">موافقة</button>
+                            <button class="btn btn-success btn-sm">Approve</button>
                         </form>
                         <form method="post" asp-action="RejectByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
-                            <button class="btn btn-danger btn-sm">رفض</button>
+                            <button class="btn btn-danger btn-sm">Reject</button>
                         </form>
                     </td>
                 </tr>

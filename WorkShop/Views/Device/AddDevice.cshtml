@@ -1,50 +1,50 @@
 ﻿@model WorkShop.ViewModel.AddDeviceViewModel
 
 @{
-    ViewData["Title"] = "إضافة جهاز جديد";
+    ViewData["Title"] = " Create Ticket ";
 }
 
-<h2 class="text-center mb-4">إضافة جهاز جديد</h2>
+<h2 class="text-center mb-4">Create Ticket Maintenance</h2>
 
 <form asp-action="AddDevice" method="post">
 
     <div class="row">
         <div class="col-md-6 mb-3">
-            <label class="form-label">القسم المختص</label>
+            <label class="form-label">Department </label>
             <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select" ></select>
             <input type="hidden" asp-for="DepartmentId" />
             <span asp-validation-for="DepartmentId" class="text-danger"></span>
         </div>
         <div class="col-md-6 mb-3">
-            <label asp-for="productId" class="form-label">الجهاز</label>
+            <label asp-for="productId" class="form-label">Device</label>
             <select asp-for="productId" asp-items="Model.Products" class="form-select">
-                <option value="">اختر الجهاز</option>
+                <option value="">select device</option>
             </select>
             <span asp-validation-for="productId" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="SerialNumber" class="form-label">الرقم التسلسلي</label>
+            <label asp-for="SerialNumber" class="form-label">S/N </label>
             <input asp-for="SerialNumber" class="form-control" />
             <span asp-validation-for="SerialNumber" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="FromLocation" class="form-label">المنطقة القادمة منها</label>
+            <label asp-for="FromLocation" class="form-label">From</label>
             <input asp-for="FromLocation" class="form-control" />
             <span asp-validation-for="FromLocation" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="FaultDate" class="form-label">تاريخ العطل</label>
+            <label asp-for="FaultDate" class="form-label"> Date issues</label>
             <input asp-for="FaultDate" class="form-control" type="date" />
             <span asp-validation-for="FaultDate" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="TechnicianId" class="form-label">الفني المستلم</label>
+            <label asp-for="TechnicianId" class="form-label">Technicians</label>
             <select asp-for="TechnicianId" asp-items="Model.Technicians" class="form-select">
-                <option value="">اختر فني</option>
+                <option value="">select technician</option>
             </select>
             <span asp-validation-for="TechnicianId" class="text-danger"></span>
         </div>
@@ -52,8 +52,8 @@
 
     </div>
     <div asp-validation-summary="All" class="text-danger"></div>
-    <button type="submit" class="btn btn-success">حفظ</button>
-    <a asp-action="Index" class="btn btn-secondary">إلغاء</a>
+    <button type="submit" class="btn btn-success">Create</button>
+    <a asp-action="Index" class="btn btn-secondary">Cansel</a>
 </form>
 
 

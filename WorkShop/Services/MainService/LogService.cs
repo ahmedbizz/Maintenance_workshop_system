@@ -7,15 +7,19 @@ namespace WorkShop.Services.MainService
 {
     public class LogService : ILogService
     {
-        private readonly IUnitOfWork _unitOfWork;
 
-        public LogService(IUnitOfWork unitOfWork)
+        private readonly IServiceScopeFactory _scopeFactory;
+
+        public LogService(IServiceScopeFactory scopeFactory)
         {
-            _unitOfWork = unitOfWork;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task LogAsync(int deviceId, string action, string description, string status, string notes, string role, string userId)
         {
+
+           using var scope = _scopeFactory.CreateScope();
+            var _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var log = new DeviceLogs
             {
                 DeviceId = deviceId,
@@ -29,6 +33,7 @@ namespace WorkShop.Services.MainService
             };
 
             await _unitOfWork.deviceLogs.AddAsync(log);
+            await _unitOfWork.CompleteAsync();
 
         }
     }

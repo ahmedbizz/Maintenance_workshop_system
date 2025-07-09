@@ -19,20 +19,19 @@
     };
 }
 @{
-    ViewData["Title"] = "الأجهزة الخاصة بي";
-}
+    ViewData["Title"] = "My Devices";}
 
-<h2 class="mb-4 text-primary">الأجهزة المحولة إليك</h2>
+    <h2 class="mb-4 text-primary"> Devices transferred to you </h2>
 
 <table class="table table-bordered table-striped">
     <thead class="table-dark">
         <tr>
-            <th>الاسم</th>
-            <th>الرقم التسلسلي</th>
-            <th>القسم</th>
-            <th>تاريخ العطل</th>
-            <th>الحالة</th>
-            <th>الإجراءات</th>
+            <th>Name</th>
+            <th>S/N </th>
+            <th>Department</th>
+            <th> Date</th>
+            <th>Status</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -50,7 +49,7 @@
                     </span>
                 </td>
                 <td>
-                    <a asp-action="DeviceDetails" asp-route-id="@device.Id" class="btn btn-sm btn-primary">عرض التفاصيل</a>
+                        <a asp-action="DeviceDetails" asp-route-id="@device.Id" class="btn btn-sm btn-primary">Device Details </a>
                 </td>
             </tr>
         }

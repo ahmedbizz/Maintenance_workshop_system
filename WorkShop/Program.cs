@@ -23,8 +23,8 @@ builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<AppD
 
 
 builder.Services.AddTransient(typeof(IRepository<>),typeof(MainRepository<>));
-builder.Services.AddTransient<IUnitOfWork,UnitOfWork>();
-
+//builder.Services.AddTransient<IUnitOfWork,UnitOfWork>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 

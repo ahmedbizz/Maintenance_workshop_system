@@ -160,35 +160,37 @@ namespace WorkShop.Controllers
                 };
                 await _unitOfWork.devices.AddAsync(device);
                 await _unitOfWork.CompleteAsync();
-            var card = new MaintenanceCard
-                {
-                    DeviceId =device.Id,
-                    CreatedAt = DateTime.Now,
-                    Notes = "AwaitingTechnician",
-                    AssignedToTechnicianAt = DateTime.Now,
-                Status = MaintenanceStatus.AwaitingTechnician.ToString()
-                };
+                var card = new MaintenanceCard
+                    {
+                        DeviceId =device.Id,
+                        CreatedAt = DateTime.Now,
+                        Notes = "AwaitingTechnician",
+                        AssignedToTechnicianAt = DateTime.Now,
+                        Status = MaintenanceStatus.AwaitingTechnician.ToString()
+                    };
 
                 await _unitOfWork.maintenanceCards.AddAsync(card);
+                await _unitOfWork.CompleteAsync();
 
-                await _logService.LogAsync(
-                    device.Id, 
-                    " Create new Teckit",
-                    "Add New Device & Create Maintenance Card",
-                    MaintenanceStatus.AwaitingTechnician.ToString(),
-                    "Note",
-                    Roles.Technion,
-                    user.Id);
+            var LogTask = _logService.LogAsync(
+                        device.Id, 
+                        " Create new Teckit",
+                        "Add New Device & Create Maintenance Card",
+                        MaintenanceStatus.AwaitingTechnician.ToString(),
+                        "Note",
+                        Roles.Technion,
+                        user.Id);
 
-            // إرسال إشعار للفنين
-            await _notificationService.NotifyUsersAsync(
-                device.TechnicianId,
-                "Maintenance ticket Open",
-                $"New device added  S/N: {device.SerialNumber}",
-                device.Id
-                );
-        
-            await _unitOfWork.CompleteAsync();
+                // إرسال إشعار للفنين
+                 var NotifyTecnition = _notificationService.NotifyUsersAsync(
+                        device.TechnicianId,
+                        "Maintenance ticket Open",
+                        $"New device added  S/N: {device.SerialNumber}",
+                        device.Id
+                        );
+
+            await Task.WhenAll(LogTask, NotifyTecnition);
+
             return RedirectToAction("Index");
 
         }// end Add Device

@@ -19,43 +19,33 @@
     };
 }
 
-<div class="container mt-4" dir="rtl">
+<div class="container mt-4" dir="ltr">
     @if (TempData["Massege"] != null)
     {
-        <div class="row">
-            <div class="col-lg-12">
-
-                <div class="bs-component">
-                    <div class="alert alert-dismissible alert-warning">
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        <h4 class="alert-heading">Warning!</h4>
-                        <p class="mb-0">  @TempData["Massege"]</p>
-                    </div>
-                </div>
-            </div>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Warning!</strong> @TempData["Massege"]
+            <button type="button" class="btn-close float-start" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-    <h2 class="text-primary text-end">تفاصيل الجهاز</h2>
+
+    <h2 class="text-primary text-start">Device Details</h2>
     <hr />
-    <dl class="row text-end">
-        <dt class="col-sm-1">اسم الجهاز:</dt>
-        <dd class="col-sm-3">@Model.ProductName</dd>
-        <dt class="col-sm-1">الحالة:</dt>
+    <dl class="row text-start">
+        <dt class="col-sm-1">Device:</dt>
+        <dd class="col-sm-4">@Model.ProductName</dd>
+        <dt class="col-sm-1">Status:</dt>
         <dd class="col-sm-6">
             <span class="badge bg-@GetStatusColor(status) p-2">
                 @status.ToString()
             </span>
         </dd>
-
-        <dt class="col-sm-1">الرقم التسلسلي:</dt>
+        <dt class="col-sm-1">S/N :</dt>
         <dd class="col-sm-3">@Model.SerialNumber</dd>
-        <dt class="col-sm-1">القسم:</dt>
+        <dt class="col-sm-1">Department:</dt>
         <dd class="col-sm-6">@Model.DepartmentName</dd>
-
-        <dt class="col-sm-3">تاريخ العطل:</dt>
+        <dt class="col-sm-4">Date issues :</dt>
         <dd class="col-sm-7">@Model.FaultDate.ToString("yyyy-MM-dd")</dd>
-
-        <dt class="col-sm-2">وصف العطل:</dt>
+        <dt class="col-sm-2">Report:</dt>
         <dd class="col-sm-10">@Model.TechnicianReport</dd>
     </dl>
 
@@ -67,42 +57,44 @@
             <input type="hidden" asp-for="SerialNumber" />
 
             <div class="mb-3">
-                <label asp-for="TechnicianReport" class="form-label">تقرير الفني</label>
+                <label asp-for="TechnicianReport" class="form-label">Issues </label>
                 <textarea asp-for="TechnicianReport" class="form-control"></textarea>
             </div>
 
             @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer))
             {
-     
-                @if (status == MaintenanceStatus.ApprovedByOfficer && Model.SparePartRequest.IsFinalized)
+                @if ((status == MaintenanceStatus.AwaitingTechnician || status == MaintenanceStatus.ApprovedByOfficer) && !Model.SparePartRequest.IsFinalized)
                 {
-                    <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-end gap-2">
+                    <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-start gap-2" dir="rtl">
                         <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
-                    <label asp-for="IsRepaired" class="form-check-label" for="CheckRepaired">تم الإصلاح</label>
-                </div>}
+                        <label asp-for="IsRepaired" class="form-check-label" for="CheckRepaired">Repaired </label>
+                    </div>
+                }
             }
+      
+
             @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
             {
-                <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-end gap-2 mt-2">
+                <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-start gap-2 mt-2" dir="rtl">
                     <input asp-for="RequestSpareParts" class="form-check-input" type="checkbox" id="toggleSpareParts" />
-                    <label asp-for="RequestSpareParts" class="form-check-label">طلب قطع غيار</label>
+                    <label asp-for="RequestSpareParts" class="form-check-label">Request Spare Parts</label>
                 </div>
             }
 
             <div id="sparePartsSection" class="mt-3">
-                <h5 class="text-secondary">القطع المطلوبة</h5>
+                <h5 class="text-secondary">Requested Spare Parts</h5>
 
                 @if (Model.SparePartRequest.Items.Any())
                 {
                     <table class="table" id="partsTable">
                         <thead class="table-dark">
                             <tr>
-                                <th>اسم القطعة</th>
-                                <th>المستودع</th>
-                                <th>الكمية</th>
+                                <th>Part name</th>
+                                <th>Warehouse</th>
+                                <th>Quantity</th>
                                 @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
                                 {
-                                    <th>حذف</th>
+                                    <th>Delete</th>
                                 }
                             </tr>
                         </thead>
@@ -110,7 +102,7 @@
                             @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
                             {
                                 var item = Model.SparePartRequest.Items[i];
-                                @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
+                                if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
                                 {
                                     <tr>
                                         <td>
@@ -133,35 +125,16 @@
                                             <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" min="1" value="@(item.Quantity == 0 ? 1 : item.Quantity)" />
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">🗑️ حذف</button>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     </tr>
                                 }
                                 else
                                 {
                                     <tr>
-                                        <td>
-
-                                            @foreach (var product in Model.Products)
-                                            {
-                                                @if (product.Value == item.ProductId.ToString())
-                            @product.Text
-                                                        }
-
-                                        </td>
-                                        <td>
-
-                                            @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
-                                            {
-                                                @if (store.Value == item.StoreId?.ToString())
-                            @store.Text
-                                                        }
-
-                                        </td>
-                                        <td>
-                                            @(item.Quantity == 0 ? "" : item.Quantity)
-                                        </td>
-
+                                        <td>@Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text</td>
+                                        <td>@item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text</td>
+                                        <td>@(item.Quantity == 0 ? "" : item.Quantity)</td>
                                     </tr>
                                 }
                             }
@@ -170,69 +143,47 @@
                 }
                 else if (!Model.RequestSpareParts)
                 {
-                    <div class="alert alert-warning text-center">لم يتم طلب أي قطع غيار لهذا الجهاز.</div>
+                    <div class="alert alert-warning text-center">No spare parts requested.</div>
                 }
 
-                @* زر الإضافة يظهر فقط إذا تم تفعيل طلب قطع الغيار *@
-                <button type="button" class="btn btn-secondary" id="sparePartsAdd" style="display:@(Model.RequestSpareParts ? "block" : "none")" onclick="addRow()">➕ إضافة قطعة</button>
+                <button type="button" class="btn btn-secondary" id="sparePartsAdd" style="display:@(Model.RequestSpareParts ? "block" : "none")" onclick="addRow()">
+                    <i class="bi bi-plus-circle"></i> Add Part
+                </button>
             </div>
+
             @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer)
             {
-
-                <button type="submit" class="btn btn-success mt-3">💾 حفظ التقرير</button>
+                <button type="submit" class="btn btn-success mt-3"><i class="bi bi-floppy"></i> Save</button>
             }
         </form>
     }
     else
     {
-
-        <h5 class="text-secondary">القطع المطلوبة</h5>
+        <h5 class="text-secondary">Parts Requested</h5>
         @if (Model.SparePartRequest.Items.Any())
         {
             <table class="table" id="partsTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>اسم القطعة</th>
-                        <th>المستودع</th>
-                        <th>الكمية</th>
-
+                        <th>Part name</th>
+                        <th>Warehouse</th>
+                        <th>Quantity</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
+                    @foreach (var item in Model.SparePartRequest.Items)
                     {
-                        var item = Model.SparePartRequest.Items[i];
-
                         <tr>
-                            <td>
-
-                                @foreach (var product in Model.Products)
-                                {
-                                    @if (product.Value == item.ProductId.ToString())
-                    @product.Text
-                                        }
-
-                            </td>
-                            <td>
-
-                                @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
-                                {
-                                    @if (store.Value == item.StoreId?.ToString())
-                    @store.Text
-                                        }
-
-                            </td>
-                            <td>
-                                @(item.Quantity == 0 ? "" : item.Quantity)
-                            </td>
-
+                            <td>@Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text</td>
+                            <td>@item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text</td>
+                            <td>@(item.Quantity == 0 ? "" : item.Quantity)</td>
                         </tr>
-
                     }
                 </tbody>
             </table>
         }
-        <div class="alert alert-info mt-4 text-center">لا يمكنك تعديل التقرير.</div>
+
+        <div class="alert alert-info mt-4 text-center">Can't edit this report.</div>
     }
 
     <form id="deleteForm" asp-controller="SpareParts" asp-action="DeleteItemPart" method="post" class="d-none">

@@ -1,23 +1,26 @@
 ﻿@model WorkShop.ViewModel.ReviewPartsRequestsViewModel
 
 <div class="container mt-4">
-    <h2 class="text-primary">طلبات قطع الغيار</h2>
-    <div class="col-6 text-center align-items-center">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3 class="text-primary">Requests awaiting engineer approval</h3>
+        <div class="col-6 text-center align-items-center">
 
-        <form class="d-flex">
-            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
-            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-        </form>
+            <form class="d-flex">
+                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
     </div>
+
     <hr />
     <table class="table table-bordered  table-hover">
         <thead class="table-dark">
             <tr>
-                <th>اسم الجهاز</th>
-                <th>الرقم التسلسلي</th>
-                <th>اسم الفني</th>
-                <th>التقرير الفني</th>
-                <th>إجراءات</th>
+                <th>Device </th>
+                <th>S/N </th>
+                <th>Technician </th>
+                <th>Report </th>
+                <th>Action </th>
             </tr>
         </thead>
         <tbody>

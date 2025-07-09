@@ -5,6 +5,7 @@ using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.Services;
+using WorkShop.Services.MainService;
 using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
@@ -86,12 +87,14 @@ namespace WorkShop.Controllers
 
 
             request.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
+            request.ManagerId = engineer.Id;
             card.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
             card.ApprovedByEngineerAt = DateTime.Now;
+            card.EngineerId = engineer.Id;
             device.Status = MaintenanceStatus.AwaitingOfficer.ToString();
-
+            await _unitOfWork.CompleteAsync();
             // سجل الحدث
-            await _logService.LogAsync(
+            var LogTask = _logService.LogAsync(
                 device.Id,
                 "Spare Parts Approved",
                 $"Spare Parts Approved By Eng.{engineer.FullName.Substring(0, 10)}",
@@ -101,7 +104,7 @@ namespace WorkShop.Controllers
                 engineer.Id);
 
             // إشعار الفني
-            await _notificationService.NotifyUsersAsync(
+            var NotifyTecnition = _notificationService.NotifyUsersAsync(
                   request.RequestedById,
                   "Spare Parts Approved",
                   $"Spare parts approved by Eng.{new string(engineer.FullName.Take(10).ToArray())} " +
@@ -111,9 +114,10 @@ namespace WorkShop.Controllers
             var officers = await _userManager.GetUsersInRoleAsync("Officer");
             var officer = officers
                 .FirstOrDefault(u => u.DepartmentId == request.Device.DepartmentId);
+            Task NotifyOfficer;
             if (officer != null)
             {
-                await _notificationService.NotifyUsersAsync(
+                NotifyOfficer = _notificationService.NotifyUsersAsync(
                       officer.Id,
                       "Spare Parts Request",
                       $"Spare parts approved by Eng.{new string(engineer.FullName.Take(10).ToArray())} " +
@@ -124,20 +128,10 @@ namespace WorkShop.Controllers
             }
             else
             {
-                  await _notificationService.NotifyUsersAsync(
-                      officer.Id,
-                      "There is no officer in charge",
-                      $"Please contact the responsible manager to solve the problem." +
-                      $"for device S/N: {request.Device.SerialNumber}"
-                     ,
-                      request.Device.Id
-                      );
-
-          
-                await _unitOfWork.CompleteAsync();
+                NotifyOfficer = Task.CompletedTask;
             }
-
-            await _unitOfWork.CompleteAsync();
+            await Task.WhenAll(LogTask, NotifyTecnition, NotifyOfficer);
+    
 
             return RedirectToAction("ReviewPartsRequests");
 
@@ -156,11 +150,13 @@ namespace WorkShop.Controllers
 
 
             request.Status = MaintenanceStatus.RejectedByEngineer.ToString();
+            request.ManagerId = engineer.Id;
             card.Status = MaintenanceStatus.RejectedByEngineer.ToString();
+            card.EngineerId = engineer.Id;
             device.Status = MaintenanceStatus.AwaitingEngineer.ToString();
-   
+            await _unitOfWork.CompleteAsync();
             // سجل الحدث
-            await _logService.LogAsync(
+            var LogTask = _logService.LogAsync(
                 device.Id,
                 "Spare Parts rejected",
                 $"Spare Parts rejected By Eng.{new string(engineer.FullName.Take(10).ToArray())}",
@@ -170,15 +166,15 @@ namespace WorkShop.Controllers
                 engineer.Id);
 
             // إشعار الفني
-            await _notificationService.NotifyUsersAsync(
+            var NotifyTecnition = _notificationService.NotifyUsersAsync(
                   request.RequestedById,
                   "Spare Parts rejected",
                   $"Spare parts rejected by Eng..{new string(engineer.FullName.Take(10).ToArray())} " +
                   $"for device S/N: {request.Device.SerialNumber}",
                    request.Device.Id
                   );
+            await Task.WhenAll(LogTask, NotifyTecnition);
 
-            await _unitOfWork.CompleteAsync();
 
             return RedirectToAction("ReviewPartsRequests");
         }
