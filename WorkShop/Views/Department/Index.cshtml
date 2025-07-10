@@ -20,6 +20,7 @@
             <th>Create At</th>
             <th>Update At</th>
         <th></th>
+     
         </thead>
         <tbody>
             @foreach (var department in Model)
@@ -29,9 +30,11 @@
                     <td width="30%">@department.Name</td>
                     <td width="20%">@department.CreateAt</td>
                     <td width="20%">@department.UpdateAt</td>
-                    <td width="20%">
+                    <td width="15%"><a class="btn btn-info " asp-controller="Report" asp-action="TiketByDepartment" asp-route-Id="@department.Id">View Report</a></td>
+                    <td width="5%">
+                        
+          
                         <a asp-controller="Department" asp-action="Create" asp-route-Id="@department.Id"><i class=" bi-pencil-square text-primary"></i></a>
-
                         &nbsp;
                         <form asp-action="Delete_Department" method="post" style="display:inline;">
                             <input type="hidden" name="Id" value="@department.Id" />

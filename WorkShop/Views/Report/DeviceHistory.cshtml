@@ -1,0 +1,64 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using WorkShop.Enums
+@inject UserManager<User> UserManager
+@inject SignInManager<User> SignInManager
+@{
+    ViewData["Title"] = "DeviceHistory";
+}
+
+
+@model List<MaintenanceCard>
+
+    <div class="container mt-4">
+        <h2 class="text-center mb-4">Maintenance Device History</h2>
+
+        @if (Model.Any())
+        {
+            <div class="row">
+>
+                <div class="">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Device</th>
+                                <th>Serial</th>
+                                <th>Status</th>
+                                <th>Technician</th>
+                                <th>AssignedToTechnicianAt</th>
+                                <th>Working Day</th>
+                                <th>Received At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                            <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.Device.Status, departmentId = item.Device.DepartmentId })'" style="cursor:pointer">
+                                    <td>@item.Device.Product.Name</td>
+                                    <td>@item.Device.SerialNumber</td>
+                                    <td>@item.Status</td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item?.Device?.Technician?.FullName) ? "N/A" : item.Device.Technician.FullName)
+                                </td>
+                                      <td>@item.AssignedToTechnicianAt</td>
+                                <td>@{
+                                    var daysDifference = (item?.AssignedToTechnicianAt.HasValue == true)
+                                    ? (DateTime.Now - item.AssignedToTechnicianAt.Value).TotalDays
+                                    : (double?)null;
+                                }
+                                @(daysDifference.HasValue ? $"{Math.Floor(daysDifference.Value)} days ago" : "N/A")</td>
+                                    <td>@item.ReceivedAt.ToString("yyyy-MM-dd")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning text-center">No data found for this Device.</div>
+        }
+    </div>
+
+
+

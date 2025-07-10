@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkShop.Context;
+using WorkShop.Enums;
 using WorkShop.Migrations;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 
 namespace WorkShop.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Roles.Admin + "," + Roles.Engineer)]
     public class DepartmentController : Controller
     {
 

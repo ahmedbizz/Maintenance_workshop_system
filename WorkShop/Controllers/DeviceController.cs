@@ -16,6 +16,7 @@ using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.Services;
+using WorkShop.Services.MainService;
 using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
@@ -42,16 +43,25 @@ namespace WorkShop.Controllers
 
 
         [HttpGet]
-        public IActionResult Index(string searchTerm , int page =1)
+        public IActionResult Index(string searchTerm , int page =1,string status = null, int? departmentId = null)
         {
-
+            var filters = new List<IDeviceFilter>
+                {
+                    new StatusFilter(status),
+                    new DepartmentFilter(departmentId),
+                    // مستقبلاً يمكنك إضافة: new CreatedDateFilter(), new RepairedFilter() ... إلخ
+                };
             var pageSize = 10;
 
-            var query = string.IsNullOrEmpty(searchTerm) ?
-                 _unitOfWork.devices.FindAll("Product", "Department", "Technician") :
+            IQueryable<Device>  query = string.IsNullOrEmpty(searchTerm) ?
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").AsQueryable():
                  _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
-                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician");
-
+                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").AsQueryable(); ;
+         
+            foreach (var filter in filters)
+            {
+                query = filter.Apply(query);
+            }
             var devices = query.ToList();
             var totalDevices = devices.Count;
              var pagedDevices = devices.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -76,7 +86,7 @@ namespace WorkShop.Controllers
     
             if (user?.DepartmentId == null)
             {
-                TempData["Error"] = "لا يمكنك الوصول إلى هذه الصفحة. لم يتم تعيينك في أي قسم.";
+                TempData["Error"] = "Access Denied.";
                 return RedirectToAction("Index");
             }
             var viewModel = new AddDeviceViewModel
@@ -137,10 +147,12 @@ namespace WorkShop.Controllers
 
             // تحقق من تكرار الجهاز بنفس الرقم التسلسلي داخل نفس القسم
             var existingDevice = _unitOfWork.devices.FindAll()
-                .FirstOrDefault(d => d.SerialNumber == model.SerialNumber && d.DepartmentId == model.DepartmentId);
+                .FirstOrDefault(d => d.SerialNumber == model.SerialNumber && 
+                d.DepartmentId == model.DepartmentId && 
+                !d.Status.Contains(MaintenanceStatus.Repaired.ToString()));
             if (existingDevice != null)
             {
-                ModelState.AddModelError("", "No device fuond");
+                ModelState.AddModelError("", "This device already have Tiket open ");
                 PopulateDropDowns();
                 return View(model);
             }

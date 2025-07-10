@@ -1,0 +1,64 @@
+﻿@model List<WorkShop.ViewModel.ReportViewModel>
+@{
+    ViewData["Title"] = "Tickets Summary";
+    var labels = string.Join(",", Model.Select(m => $"'{m.TiketStatus}'"));
+    var data = string.Join(",", Model.Select(m => m.TiketNumber));
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Tickets Status Overview</h2>
+
+    @if (Model.Any())
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.TiketStatus, departmentId = item.DepartmentId })'" style="cursor:pointer">
+                                <td>@item.TiketStatus</td>
+                                <td>@item.TiketNumber</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center">No data found for this department.</div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [@Html.Raw(labels)],
+                datasets: [{
+                    label: 'Tickets Count',
+                    data: [@Html.Raw(data)],
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d',
+                        '#20c997', '#fd7e14', '#6f42c1', '#0dcaf0'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+        });
+    </script>
+}
