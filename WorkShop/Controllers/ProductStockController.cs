@@ -1,37 +1,51 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + "," + Roles.StoreKeeper + "," + Roles.Admin)]
     public class ProductStockController : Controller
     {
 
-        public ProductStockController(IUnitOfWork unitOfWork)
+        public ProductStockController(IUnitOfWork unitOfWork , UserManager<User> userManager)
         {
-            _unitOfWork = unitOfWork;    
+            _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
         private readonly IUnitOfWork _unitOfWork;
- 
-        public IActionResult Index(string searchTerm, int page = 1)
+        private readonly UserManager<User> _userManager;
+        public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var pgeSize = 10; // عدد العناصر في كل صفحة
-            
-            var query = string.IsNullOrEmpty(searchTerm) ?
-                _unitOfWork.productStoks.FindAll("product", "store") :
-                _unitOfWork.productStoks.SearchBycondition(
-                    ps => ps.product.Name.Contains(searchTerm) || 
-                    ps.store.Name.Contains(searchTerm), "product", "store");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+            List<ProductStock> query;
+            var pageSize = 10;
+            if (isAdmin)
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                 _unitOfWork.productStoks.FindAll("product", "store").ToList() :
+                _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").ToList();
+            }
+            else
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                        _unitOfWork.productStoks.FindAll("product", "store").Where(p => p.product.DepartmentId == curentUser.DepartmentId).ToList() :
+                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").Where(p => p.product.DepartmentId == curentUser.DepartmentId).ToList();
 
+
+
+            }
             int totalItems = query.Count();
 
             var productStocks = query
-                .Skip((page - 1) * pgeSize)
-                .Take(pgeSize)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToList();
 
             var viewModel = new ProductStockViewModel
@@ -39,7 +53,7 @@ namespace WorkShop.Controllers
                 ProductStocks = productStocks,
                 SearchTerm = searchTerm,
                 CurrentPage = page,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)pgeSize)
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
             };
 
 
@@ -48,11 +62,22 @@ namespace WorkShop.Controllers
         public IActionResult Details() { return View(); }
 
         [HttpGet]
-        public IActionResult Create(int? proId, int? storeId)
+        [Authorize(Roles =  Roles.StoreKeeper + "," + Roles.Admin)]
+        public async Task<IActionResult> Create(int? proId, int? storeId)
         {
-            ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
-            ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 
+            if (isAdmin)
+            {
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
+            }
+            else
+            {
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s =>s.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => p.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+            }
             // إذا لم يتم تمرير المفاتيح، نعرض نموذج فارغ
             if (proId == null || storeId == null)
             {
@@ -65,10 +90,22 @@ namespace WorkShop.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(ProductStock stock)
+        [Authorize(Roles =  Roles.StoreKeeper + "," + Roles.Admin)]
+        public async Task<IActionResult> Create(ProductStock stock)
         {
-            ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
-            ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+
+            if (isAdmin)
+            {
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
+            }
+            else
+            {
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => s.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => p.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+            }
             if (ModelState.IsValid)
             {
                 var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);
@@ -97,7 +134,7 @@ namespace WorkShop.Controllers
 
 
         }
-
+        [Authorize(Roles = Roles.StoreKeeper + "," + Roles.Admin)]
         public IActionResult Delete(ProductStock stock)
         {
             var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);

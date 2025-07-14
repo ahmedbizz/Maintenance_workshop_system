@@ -43,7 +43,7 @@ namespace WorkShop.Controllers
 
 
         [HttpGet]
-        public IActionResult Index(string searchTerm , int page =1,string status = null, int? departmentId = null)
+        public async Task<IActionResult> Index(string searchTerm , int page =1,string status = null, int? departmentId = null)
         {
             var filters = new List<IDeviceFilter>
                 {
@@ -52,11 +52,11 @@ namespace WorkShop.Controllers
                     // مستقبلاً يمكنك إضافة: new CreatedDateFilter(), new RepairedFilter() ... إلخ
                 };
             var pageSize = 10;
-
+            var curentUser = await _userManager.GetUserAsync(User);
             IQueryable<Device>  query = string.IsNullOrEmpty(searchTerm) ?
-                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").AsQueryable():
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => d.DepartmentId == curentUser.DepartmentId).AsQueryable():
                  _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
-                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").AsQueryable(); ;
+                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => d.DepartmentId == curentUser.DepartmentId).AsQueryable(); ;
          
             foreach (var filter in filters)
             {

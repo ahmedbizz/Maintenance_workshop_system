@@ -1,0 +1,38 @@
+﻿@model Microsoft.AspNetCore.Identity.IdentityRole
+
+@{
+    ViewData["Title"] = "Create Role";
+}
+
+
+<div class="modal fade" id="CreateRole">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="CreateRole" id="RoleForm" method="post">
+                <div class="modal-header">
+                    <h4>Create Role</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="roleName">Role Name</label>
+                        <input type="text" name="roleName" class="form-control" placeholder="Enter role name" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                </div>
+                <div asp-validation-summary="All"></div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

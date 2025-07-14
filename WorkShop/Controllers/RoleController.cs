@@ -22,7 +22,7 @@ namespace WorkShop.Controllers
 
 
         [HttpGet]
-        public IActionResult CreateRole() { return View(); }
+        public IActionResult CreateRole() { return PartialView("_CreateRole", new IdentityRole()); }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -32,10 +32,10 @@ namespace WorkShop.Controllers
             if (!string.IsNullOrEmpty(roleName) && !await _roleManager.RoleExistsAsync(roleName))
             {
                await _roleManager.CreateAsync(new IdentityRole(roleName));
-               return RedirectToAction("ListRole");         
+                return Json(new { success = true });
             }
-            ModelState.AddModelError("", "Name of Role Not Exists !!");
-            return View();
+            ModelState.AddModelError("", "Name of Role  Exists !!");
+            return PartialView("_CreateRole", new IdentityRole());
         }// end 
 
         [HttpGet]

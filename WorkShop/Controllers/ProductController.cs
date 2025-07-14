@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Primitives;
+using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
@@ -9,32 +11,45 @@ using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace WorkShop.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + "," + Roles.StoreKeeper + "," + Roles.Admin)]
     public class ProductController : Controller
     {
 
-        public ProductController(IUnitOfWork unitOfWork , IHostingEnvironment hostingEnvironment)
+        public ProductController(IUnitOfWork unitOfWork , IHostingEnvironment hostingEnvironment, UserManager<User> userManager)
         {
 
-           // _repository = repository;
-           // _store = repStore;
-            //_department = repDep;
-
+            _userManager = userManager;
             _unitOfWork = unitOfWork;
             _environment = hostingEnvironment;
 
         }
-        //protected readonly IRepository<Product> _repository;
-        //protected readonly IRepository<Store> _store;
-        //protected readonly IRepository<Department> _department;
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHostingEnvironment _environment;
-        public IActionResult Index(string searchTerm, int page = 1)
+        private readonly UserManager<User> _userManager;
+        public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            int pageSize = 10;
-            var query = string.IsNullOrEmpty(searchTerm) ?
-                _unitOfWork.products.FindAll("department") :
-                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm) ,"department");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+            List<Product> query;
+            var pageSize = 10;
+            if (isAdmin)
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                _unitOfWork.products.FindAll("department").ToList():
+                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm), "department").ToList();
+            }
+            else
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                        _unitOfWork.products.FindAll("department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList() :
+                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm), "department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList();
+              
+
+
+            }
+          
+             
             int totalItems = query.Count();
 
             var products = query
@@ -59,10 +74,23 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int? Id)
+        public async Task<IActionResult> Create(int? Id)
         {
 
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+            List<Department> departments;
+
+
+            if (isAdmin)
+            {
+                departments = _unitOfWork.departments.FindAll().ToList();
+            }
+            else
+            {
+                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+            }
+            ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (Id == null || Id == 0)
             {
                 return View();
@@ -76,9 +104,22 @@ namespace WorkShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Product product)
+        public async Task<IActionResult> Create(Product product)
         {
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+            List<Department> departments;
+
+
+            if (isAdmin)
+            {
+                departments = _unitOfWork.departments.FindAll().ToList();
+            }
+            else
+            {
+                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+            }
+            ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (ModelState.IsValid)
             {
                 if (product.Id == 0)

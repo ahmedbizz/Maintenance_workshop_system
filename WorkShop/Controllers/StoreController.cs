@@ -2,16 +2,18 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using WorkShop.Context;
 using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.Services;
+using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
 {
-    [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + ","+ Roles.StoreKeeper)]
+    [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + ","+ Roles.StoreKeeper +"," + Roles.Admin)]
     public class StoreController : Controller
     {
         private readonly UserManager<User> _userManager;
@@ -27,10 +29,40 @@ namespace WorkShop.Controllers
         }
 
 
-
-        public IActionResult Index()
+       
+        public  async Task<IActionResult> Index(string? searchTerm , int page =1)
         {
-            return View(_unitOfWork.stores.FindAll("department").ToList());
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+            List<Store> query;
+            var pageSize = 10;
+            if (isAdmin)
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                    _unitOfWork.stores.FindAll("department").ToList() :
+                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm)).ToList();
+            }
+            else
+            {
+                query = string.IsNullOrEmpty(searchTerm) ?
+                    _unitOfWork.stores.FindAll("department").Where(s => s.DepartmentId == curentUser.DepartmentId).ToList() :
+                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm) && s.DepartmentId == curentUser.DepartmentId).ToList();
+
+            }
+            var strors = query.ToList();
+            var total = strors.Count;
+            var paged = strors.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var viewModel = new StoreViewModel
+            {
+                stors = paged,
+                CurrentPage = page,
+                searchTerm = searchTerm,
+                TotalPages = (int)Math.Ceiling((double)total / pageSize)
+            };
+
+
+            return View(viewModel);
         }
 
         public IActionResult Details(int? Id)
@@ -46,9 +78,22 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int? Id) {
+        [Authorize(Roles = Roles.Engineer +","+Roles.Admin)]
+        public async Task <IActionResult> Create(int? Id) {
+            var curentUser = await _userManager.GetUserAsync(User);
+            var isAdmin = await _userManager.IsInRoleAsync(curentUser,Roles.Admin);
+            List<Department> departments;
 
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+
+            if (isAdmin)
+            {
+                departments = _unitOfWork.departments.FindAll().ToList();
+            }
+            else
+            {
+                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+            }
+            ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (Id == null || Id == 0)
             {
                 return View();
@@ -62,6 +107,7 @@ namespace WorkShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.Engineer + "," + Roles.Admin)]
         public IActionResult Create(Store store) {
             ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
             if (ModelState.IsValid) { 
@@ -97,8 +143,10 @@ namespace WorkShop.Controllers
 
         }
 
+        [Authorize(Roles = Roles.Engineer + "," + Roles.Admin)]
         public IActionResult Delete(int? id)
         {
+            try { 
             var store = _unitOfWork.stores.FindById(id);
             if (store == null)
             {
@@ -108,6 +156,25 @@ namespace WorkShop.Controllers
             _unitOfWork.stores.Delete(store.Id);
 
             return RedirectToAction("Index");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // فحص إذا كان الخطأ بسبب ارتباط المستخدم ببيانات أخرى
+                if (dbEx.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+                {
+                    TempData["DeleteError"] = "The store cannot be deleted because it is associated with other data..";
+                }
+                else
+                {
+                    TempData["DeleteError"] = "An error occurred during the deletion process.";
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex){
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
+                return View("Index");
+            }
 
         }
 

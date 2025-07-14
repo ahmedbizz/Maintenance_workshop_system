@@ -1,10 +1,16 @@
 ﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole>
-
+@using Microsoft.AspNetCore.Identity
 @{
     ViewData["Title"] = "Roles List";
 }
-
-<h2>Roles List</h2>
+<div class="d-flex justify-content-between m-4">
+    <h2>Roles List</h2>
+    <button type="button" class="btn btn-success btnCreateRole" data-bs-toggle="modal"
+            data-bs-target="#CreateRole"
+         >
+        <i class="bi bi-plus-lg"></i>Create Role
+    </button>
+</div>
 
 <table class="table table-bordered">
     <thead>
@@ -23,5 +29,38 @@
         }
     </tbody>
 </table>
+@await Html.PartialAsync("_CreateRole", new IdentityRole())
 
-<a asp-action="CreateRole" class="btn btn-success">+ Add New Role</a>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // فتح مودال الإنشاء
+        $('.btnCreateRole').click(() => {
+            $('#CreateRole').modal('show');
+        });
+
+
+                // الحفظ عبر ajax
+        $(document).on('submit', '#RoleForm', function (e) {
+            e.preventDefault();
+            const form = $(this);
+            const url = form.attr('action');
+            const formData = form.serialize();
+
+            $.post(url, formData)
+            .done(function (result) {
+               if (result.success) {
+                 $('.modal').modal('hide');
+                  setTimeout(() => {
+                  location.reload();
+                  }, 300);
+                    } else {
+                          $('#CreateRole .modal-content').html($(result).find('.modal-content').html());
+                          $('#CreateRole').modal('show');
+                                          
+                          }
+                      });
+                  });
+        </script>
+}

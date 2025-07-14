@@ -73,30 +73,30 @@
                                 </li>
                             }
                             @* روابط بحسب الدور *@
-                            @if (User.IsInRole(Roles.Engineer))
+                            @if (User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Admin))
                             {
 
                                 <li class="nav-item"><a class="nav-link" asp-controller="Department" asp-action="Index">Departmet</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="AddDevice">Maintenance ticket </a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Engineer" asp-action="ReviewPartsRequests"> Spare parts requests </a></li>
                             }
-                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer))
+                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="Index">Devices</a></li>
                             }
-                            @if (User.IsInRole(Roles.Technion))
+                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Device" asp-action="TechnicionDevices">My Devices</a></li>
                             }
-                            @if (User.IsInRole(Roles.Officer))
+                            @if (User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Officer" asp-action="ReviewPartsRequestsByOfficer">Spare parts requests</a></li>
                             }
-                            @if (User.IsInRole(Roles.StoreKeeper))
+                            @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Admin))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="PendingDeliveries">Spare parts requests</a></li>
                             }
-                            @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Officer))
+                            @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
                             {
                               
                                 <li class="nav-item"><a class="nav-link" asp-controller="Store" asp-action="Index">WareHuose</a></li>
@@ -129,7 +129,7 @@
                                         </span>
                                     }
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 300px;">
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 300px; background-color:lightgrey">
                                     @if (notifications.Any())
                                     {
 
@@ -152,15 +152,15 @@
                                                     url = Url.Action("TechnicionDevices", "Device");
                                                 }
                                             }
-                                            <li >
+                                          
                                                 <div class="toast show" role="alert">
                                                     <div class="toast-header">
-                                                        <strong class="me-auto">@n.Title</strong>
-                                                        <small>@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                                        <strong class="me-auto text-success">@n.Title</strong>
+                                                        <small class="text-info">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
                                                         <form asp-action="DeleteNotification" asp-controller="Notification" method="post">
                                                             <input type="hidden" name="Id" value="@n.Id" />
                                                             <input hidden name="curentUrl" value="@Context.Request.Path"/>
-                                                            <button type="submit" class="btn-close ms-2 mb-1"  aria-label="Close">
+                                                            <button type="submit" class="btn-close btn-danger ms-2 mb-1"  aria-label="Close">
                                                                 <span aria-hidden="true"></span>
                                                             </button>
                                                         </form>
@@ -174,7 +174,7 @@
                                                     </div>
                                                 </div>
 
-                                            </li>
+                                         
                                         }
                                     }
                                     else
@@ -184,6 +184,9 @@
                             
                                 </ul>
                             </li>
+
+
+         
 
                             @* صورة واسم المستخدم *@
                             <li class="nav-item dropdown">
