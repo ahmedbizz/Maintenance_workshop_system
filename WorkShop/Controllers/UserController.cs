@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using WorkShop.Context;
 using WorkShop.Enums;
@@ -165,22 +167,51 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete_user(string? Id)
         {
-            var existUser = await _userManager.FindByIdAsync(Id);
-            if (existUser == null)
+            try
             {
-                return NotFound();
-            }
-            else
-            {
-                var result = await _userManager.DeleteAsync(existUser);
-                if (!result.Succeeded)
+                var existUser = await _userManager.FindByIdAsync(Id);
+                if (existUser == null)
                 {
-                    foreach (var error in result.Errors)
-                        ModelState.AddModelError("", error.Description);
-                    return View("Index");
+                    return NotFound();
                 }
+                else
+                {
+                    var result = await _userManager.DeleteAsync(existUser);
+                    if (!result.Succeeded)
+                    {
+                        foreach (var error in result.Errors)
+                            ModelState.AddModelError("", error.Description);
+
+                      
+                        return View("Index");
+                    }
+                    return RedirectToAction("Index");
+                }
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // فحص إذا كان الخطأ بسبب ارتباط المستخدم ببيانات أخرى
+                if (dbEx.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+                {
+                    TempData["DeleteError"] = "The user cannot be deleted because it is associated with other data..";
+                }
+                else
+                {
+                    TempData["DeleteError"] = "An error occurred during the deletion process.";
+                }
+
                 return RedirectToAction("Index");
             }
+            catch (Exception ex){
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
+                return View("Index");
+            }
+
         }
+
+
+
+
+
     }
 }

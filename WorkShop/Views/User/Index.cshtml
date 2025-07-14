@@ -22,14 +22,14 @@
     </div>
     <table class="table tab-content shadow m-4 p-2 table-hover">
         <thead>
-
-        <th>Img</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Department</th>
-
-        <th>Update At</th>
-        <th></th>
+            <tr class="text-center">
+                <th>Img</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th >Update At</th>
+                <th  >Action</th>
+            </tr>
         </thead>
         <tbody>
             @foreach (var user in Model.users)
@@ -39,18 +39,22 @@
                     <td width="10%"><img src="~/images/@user.imagePath" style="width:50px;border-radius:50px" class="img-thumbnail"/></td>
                     <td width="20%">@user.FullName</td>
                     <td width="20%">@user.Email</td>
-                    <td width="15%"> <a asp-action="Create" asp-controller="Department" asp-route-Id="@user.DepartmentId" ><i class=" bi-pencil-square text-primary">@user.department.Name</a></td>
+                   
+                    <td width="10%" onclick="window.location.href='@Url.Action("Index", "Department", new { searchTerm = user.department.Name})'" style="cursor:pointer"><i class=" bi-pencil-square text-primary">@user.department.Name</td>
                     <td width="20%">@user.UpdateAt</td>
-                    <td width="10%">
+                    <td width="20%">
+
+                        <a class="btn btn-outline-success " asp-controller="Report" asp-action="UserMintenanceHistory" asp-route-Id="@user.Id"><i class="bi bi-file-earmark-text"></i> Report</a>
+                        &nbsp;
                         <a asp-controller="User" asp-action="Create_user_Edite" asp-route-Id="@user.Id"><i class=" bi-pencil-square text-primary"></i></a>
 
                         &nbsp;
-                        <form asp-action="Delete_user" method="post" style="display:inline;">
-                            <input type="hidden" name="Id" value="@user.Id" />
-                            <button type="submit" class="btn btn-link p-0 m-0 border-0 text-danger" onclick="return confirm('Are you sure you want to delete this item?');">
-                                <i class="bi-trash3"></i>
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-link p-0 m-0 border-0 text-danger btnDelete"
+                                data-bs-toggle="modal"
+                                data-id="@user.Id">
+                            <i class="bi-trash3"></i>
+                        </button>
                     </td>
 
                 </tr>
@@ -69,7 +73,68 @@
             }
         </ul>
     </nav>
+    @if (TempData["Error"] != null)
+    {
+        <p>Are you sure to delete this User?</p>
+    }
+    <div class="modal fade" id="deleteUser">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Delete_user" method="post">
+                    <input name="Id" hidden />
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Alert !!</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure to delete this User?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">Yes</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
+    <!-- Modal لعرض الخطأ -->
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="errorModalLabel">Deletion error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="errorModalMessage">@TempData["DeleteError"]</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
+@section Scripts{
+    <script>
+            // فتح مودال الحذف
+        $('.btnDelete').click(function (e) {
+            e.preventDefault();
+            const id = $(this).data('id');
+            $('#deleteUser input[name="Id"]').val(id);
+            $('#deleteUser').modal('show');
+        });
+
+                $(document).ready(function () {
+            var errorMessage = '@TempData["DeleteError"]';
+            if (errorMessage && errorMessage.trim() !== "") {
+                var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+            }
+        });
+    </script>
+
+}
 

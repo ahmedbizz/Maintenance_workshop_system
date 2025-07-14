@@ -1,24 +1,30 @@
-﻿@model WorkShop.Models.Department
+﻿@model WorkShop.ViewModel.DepartmentDetailsViewModel
 
-<h2 class="text-center">تفاصيل القسم</h2>
+<h2 class="text-center">Department employees</h2>
 
 <div>
-    <div class="d-flex justify-content-between" ><h3>@Model.Name</h3><h4>القسم</h4></div>
+    <div><h4>Department</h4><h3>@Model.Department.Name</h3></div>
     <hr />
-    <h4 class="text-center">المستخدمون في هذا القسم</h4>
+    <h4 class="text-center">Epmloyee in this deoartment</h4>
+    <div class="col-6 text-center align-items-center">
 
-    @if (Model.users != null && Model.users.Any())
+        <form class="d-flex">
+            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
+            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
+    @if (Model.Users != null && Model.Users.Any())
     {
         <table class="table shadow table-hover">
             <thead>
                 <tr>
-                    <th>الاسم</th>
-                    <th>البريد الإلكتروني</th>
-                    <th>الهاتف</th>
+                    <th>Department</th>
+                    <th>Email </th>
+                    <th>phone</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var user in Model.users)
+                @foreach (var user in Model.Users)
                 {
                     <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create_user_Edite", "User", new { id = user.Id })'">
                         <td>@user.FullName</td>
@@ -28,11 +34,22 @@
                 }
             </tbody>
         </table>
+
+            <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
     }
     else
     {
-        <p>لا يوجد مستخدمون في هذا القسم.</p>
+        <p>There is no employyes in this department.</p>
     }
 </div>
 
-<a asp-action="Index" class=" btn btn-danger">عودة</a>
+<a asp-action="Index" class=" btn btn-danger">Back</a>

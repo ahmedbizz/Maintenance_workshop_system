@@ -1,0 +1,83 @@
+﻿@model List<WorkShop.ViewModel.ReportUserViewModel>
+
+@{
+    ViewData["Title"] = "User Summary by Maintenance";
+
+    // Pie chart data
+    var labels = string.Join(",", Model.Select(m => $"'{m.TiketStatus}'"));
+    var data = string.Join(",", Model.Select(m => m.TiketNumber));
+
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">User Summary by Tekit Maintenance</h2>
+
+    @if (Model.Any())
+    {
+        <div class="row">
+            <!-- Pie chart -->
+            <div class="col-md-6">
+                <h5 class="text-center">Ticket Distribution by Status</h5>
+                <canvas id="statusChart"></canvas>
+            </div>
+
+            <!-- Table -->
+            <div class="col-md-6">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.TiketStatus, searchTerm = item.userId })'" style="cursor:pointer">
+                                <td>@item.TiketStatus</td>
+                                <td>@item.TiketNumber</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr />
+
+
+
+        <div class="mt-4">
+            <a asp-action="Index" asp-controller="User" class="btn btn-danger">Back</a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center">No data found for this User.</div>
+        <a asp-action="Index" asp-controller="User" class="btn btn-danger">Back</a>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Pie Chart - Ticket by Status
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: [@Html.Raw(labels)],
+                datasets: [{
+                    label: 'Tickets Count',
+                    data: [@Html.Raw(data)],
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d',
+                        '#20c997', '#fd7e14', '#6f42c1', '#0dcaf0'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+
+    </script>
+}

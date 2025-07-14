@@ -12,9 +12,9 @@ namespace WorkShop.Models
         [StringLength(100, MinimumLength = 2, ErrorMessage = "الاسم يجب أن يكون بين 2 و100 حرف")]
         public string Name { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime CreateAt { get; set; } = DateTime.Now;
 
-        public DateTime UpdateAt { get; set; }
+        public DateTime UpdateAt { get; set; } = DateTime.Now;
 
         public ICollection<User> users { get; set; } = new List<User>();
 

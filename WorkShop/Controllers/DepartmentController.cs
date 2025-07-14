@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Packaging.Signing;
 using WorkShop.Context;
 using WorkShop.Enums;
 using WorkShop.Migrations;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
+using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
 {
@@ -24,66 +26,130 @@ namespace WorkShop.Controllers
 
 
 
-
-        public IActionResult Index()
+        [HttpGet]
+        public IActionResult Index(string? searchTerm ,int page =1)
         {
-           
-            return View(_unitOfWork.departments.FindAll());
+            var pageSize = 10;
+            var query = string.IsNullOrEmpty(searchTerm) ?
+                  _unitOfWork.departments.FindAll().ToList() :
+                  _unitOfWork.departments.FindAll().Where(d => d.Name.Contains(searchTerm)).ToList();
+            var totalDepartment = query.Count;
+            var pagedDepartments = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var viewModel = new DepartmentViewModel
+            {
+                departments = pagedDepartments,
+                CurrentPage = page,
+                searchTerm = searchTerm,
+                TotalPages = (int)Math.Ceiling((double)totalDepartment / pageSize)
+            };
+
+
+
+
+
+            return View(viewModel);
         }
 
-        public IActionResult Details(int? Id)
+        public IActionResult Details(int? Id, string? searchTerm, int page = 1)
         {
             if(Id == null)
             {
                 return NotFound();
             }
-            var Department = _unitOfWork.departments.FindAll("users").FirstOrDefault(d => d.Id == Id);
 
-            if(Department == null)
+            int pageSize = 10;
+            var department = _unitOfWork.departments.FindAll("users").FirstOrDefault(d => d.Id == Id);
+
+            if (department == null)
             {
+                // معالجة إذا لم يتم العثور على القسم
                 return NotFound();
             }
-            return View(Department);
+
+            IEnumerable<User> users = department.users;
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                users = users.Where(u => u.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                                      || u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+
+            int totalUsers = users.Count();
+
+            var pagedUsers = users
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var ViewModel = new DepartmentDetailsViewModel
+            {
+                Department = department,
+                Users = pagedUsers,
+                TotalUsers = totalUsers,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
+                SearchTerm = searchTerm
+
+            };
+            return View(ViewModel);
         }
         [HttpGet]
-        public IActionResult Create(int? Id)
+        public IActionResult Create()
         {
-            if (Id == null || Id == 0)
-            {
-                return View();
-            }
-            else
-            {
-                var item = _unitOfWork.departments.FindById(Id);
-                if (item == null)
-                {
-                    return NotFound();
-                }
-                return View(item);
-            }
+          
+                return PartialView("_Create", new Department());
+          
+
         }
         [HttpPost]
         public IActionResult Create(Department department)
         {
             if (ModelState.IsValid)
             {
-                if (department.Id == 0)
-                {
+         
                     department.UpdateAt = DateTime.Now;
                     _unitOfWork.departments.Insert(department);
-                }
-                else
-                {
-                    department.UpdateAt = DateTime.Now;
-                    _unitOfWork.departments.Update(department);
-                }
 
-              
-                return RedirectToAction("Index");
+
+
+                return Json(new { success = true });
             }
             else
             {
-                return View(department);
+                return PartialView("_Create",department);
+            }
+
+        }
+        [HttpGet]
+        public IActionResult Edit(int? Id)
+        {
+
+                var item = _unitOfWork.departments.FindById(Id);
+                if (item == null)
+                {
+                    return NotFound();
+                }
+                return PartialView("_Edit", item);
+         
+        }
+
+        [HttpPost]
+        public IActionResult Edit(Department department)
+        {
+            if (ModelState.IsValid)
+            {
+   
+                    department.UpdateAt = DateTime.Now;
+                    _unitOfWork.departments.Update(department);
+
+
+
+                return Json(new { success = true }); ;
+            }
+            else
+            {
+                return PartialView("_Edit",department);
             }
 
         }

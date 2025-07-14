@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkShop.Enums;
+using WorkShop.Repository;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
 
@@ -15,23 +16,51 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> TiketByDepartment(int? Id)
+        public IActionResult TiketByDepartment(int? id)
         {
+            if (id == null)
+                return NotFound();
+
             var devices = _UnitOfWork.devices
                             .FindAll("Department")
-                            .Where(d => d.DepartmentId == Id).ToList();
+                            .Where(d => d.DepartmentId == id)
+                            .ToList();
 
-            var TiketCount = devices
+            var ticketCount = devices
                             .GroupBy(d => d.Status)
-                            .Select(T => new ReportViewModel
+                            .Select(g => new ReportViewModel
                             {
-                                DepartmentId = Id,
-                                TiketStatus = T.Key,
-                                TiketNumber = T.Count(),
+                                DepartmentId = id.Value,
+                                TiketStatus = g.Key,
+                                TiketNumber = g.Count()
                             }).ToList();
 
-            ViewBag.DepartmentId = Id;
-            return View("TiketByDepartment", TiketCount);
+            var trendData = devices
+                .GroupBy(d => new
+                {
+                    Region = string.IsNullOrEmpty(d.FromLocation) ? "Unknown" : d.FromLocation,
+                 
+                })
+                .Select(g => new ReportRgionIssuesViewModel
+                {
+                    DepartmentId = id.Value,
+                    TiketNumber = g.Count(),
+                    TiketRegion = g.Key.Region
+
+                }
+              ).ToList();
+
+
+
+    
+
+            var model = new ReportLineDepartmentViewModel
+            {
+                TicketCounts = ticketCount,
+                Datasets = trendData
+            };
+
+            return View(model);
         }
 
         [HttpGet]
@@ -48,6 +77,31 @@ namespace WorkShop.Controllers
 
 
             return View(history);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UserMintenanceHistory(string? id)
+        {
+            if (id == null)
+                return NotFound();
+
+
+            var devices = _UnitOfWork.devices
+                            .FindAll("Department")
+                            .Where(d => d.TechnicianId == id)
+                            .ToList();
+
+
+            var ticketCount = devices
+                            .GroupBy(d => d.Status)
+                            .Select(g => new ReportUserViewModel
+                            {
+                                userId = id,
+                                TiketStatus = g.Key,
+                                TiketNumber = g.Count()
+                            }).ToList();
+
+            return View(ticketCount);
         }
     }
 }

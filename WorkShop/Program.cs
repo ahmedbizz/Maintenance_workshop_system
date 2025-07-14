@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using WorkShop.Context;
+using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository;
 using WorkShop.Repository.Base;
@@ -45,6 +46,21 @@ builder.Services.Configure<RequestLocalizationOptions>(
         });
 
 var app = builder.Build();
+//Add DbInitialize 
+
+using(var scop = app.Services.CreateScope()){
+
+    var service = scop.ServiceProvider;
+    try {
+
+        await DbInitalize.IniatialDatabase(service);
+    } catch (Exception ex)
+    {
+        Console.WriteLine("? ??? ????? ????? Seeder: " + ex.Message);
+        Console.WriteLine(ex.InnerException?.Message);
+
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

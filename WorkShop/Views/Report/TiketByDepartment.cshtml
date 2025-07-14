@@ -1,19 +1,30 @@
-﻿@model List<WorkShop.ViewModel.ReportViewModel>
+﻿@model WorkShop.ViewModel.ReportLineDepartmentViewModel
+
 @{
-    ViewData["Title"] = "Tickets Summary";
-    var labels = string.Join(",", Model.Select(m => $"'{m.TiketStatus}'"));
-    var data = string.Join(",", Model.Select(m => m.TiketNumber));
+    ViewData["Title"] = "Tickets Summary by Department";
+
+    // Pie chart data
+    var labels = string.Join(",", Model.TicketCounts.Select(m => $"'{m.TiketStatus}'"));
+    var data = string.Join(",", Model.TicketCounts.Select(m => m.TiketNumber));
+
+    // Line chart data
+    var regionLabels = string.Join(",", Model.Datasets.Select(r => $"'{r.TiketRegion}'"));
+    var regionData = string.Join(",", Model.Datasets.Select(r => r.TiketNumber));
 }
 
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Tickets Status Overview</h2>
+    <h2 class="text-center mb-4">Tickets Summary by Department</h2>
 
-    @if (Model.Any())
+    @if (Model.TicketCounts.Any())
     {
         <div class="row">
+            <!-- Pie chart -->
             <div class="col-md-6">
+                <h5 class="text-center">Ticket Distribution by Status</h5>
                 <canvas id="statusChart"></canvas>
             </div>
+
+            <!-- Table -->
             <div class="col-md-6">
                 <table class="table table-bordered table-hover">
                     <thead class="table-dark">
@@ -23,7 +34,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model)
+                        @foreach (var item in Model.TicketCounts)
                         {
                             <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.TiketStatus, departmentId = item.DepartmentId })'" style="cursor:pointer">
                                 <td>@item.TiketStatus</td>
@@ -34,18 +45,34 @@
                 </table>
             </div>
         </div>
+
+        <hr />
+
+        <!-- Line chart -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h4 class="text-center">Tickets by Region</h4>
+                <canvas id="regionChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a asp-action="Index" asp-controller="Department" class="btn btn-danger">Back</a>
+        </div>
     }
     else
     {
         <div class="alert alert-warning text-center">No data found for this department.</div>
+        <a asp-action="Index" asp-controller="Department" class="btn btn-danger">Back</a>
     }
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const ctx = document.getElementById('statusChart').getContext('2d');
-        const chart = new Chart(ctx, {
+        // Pie Chart - Ticket by Status
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
             type: 'pie',
             data: {
                 labels: [@Html.Raw(labels)],
@@ -58,7 +85,36 @@
                     ],
                     borderWidth: 1
                 }]
+            }
+        });
+
+        // Line Chart - Tickets by Region
+        const regionCtx = document.getElementById('regionChart').getContext('2d');
+        new Chart(regionCtx, {
+            type: 'line',
+            data: {
+                labels: [@Html.Raw(regionLabels)],
+                datasets: [{
+                    label: 'Devices by Region',
+                    data: [@Html.Raw(regionData)],
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
             },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Devices'
+                        }
+                    }
+                }
+            }
         });
     </script>
 }

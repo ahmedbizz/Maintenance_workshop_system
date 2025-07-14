@@ -1,47 +1,61 @@
-﻿@model IEnumerable<Department>
+﻿@model WorkShop.ViewModel.DepartmentViewModel
 @{
     ViewData["Title"] = "Index";
 }
 
 <div class="row pt-4 align-items-center">
-
-    <div class="col-6">
-        <h1 class="text-primary">Departments</h1>
+    <div class="d-flex align-content-center">
+    <div class="col-4">
+        <h4 class="text-primary">Departments</h4>
     </div>
-    <div class="col-6 text-end align-items-center">
-        <a asp-action="Create" asp-controller="Department" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
+    <div class="col-6 text-center align-items-center">
 
+        <form class="d-flex">
+            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm">
+            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+        </form>
     </div>
+    <div class="col-2 text-end align-items-center">
 
+        <button type="button" class="btn btn-primary btnCreateDepartment" data-toggle="modal" data-target="#CreateDepartment"><i class="bi bi-plus-lg"></i>Create</button>
+    </div>
+    </div>
     <table class="table tab-content shadow m-4 p-2 table-hover">
         <thead>
+            <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Create At</th>
             <th>Update At</th>
-        <th></th>
-     
+                <th class="text-center">Actons</th>
+            </tr>
         </thead>
         <tbody>
-            @foreach (var department in Model)
+            @foreach (var department in Model.departments)
             {
-                <tr style="cursor:pointer" onclick="location.href='@Url.Action("Details", "Department", new { id = @department.Id })'">
-                    <td width="10%">@department.Id</td>
+                <tr>
+                    <td width="5%">@department.Id</td>
                     <td width="30%">@department.Name</td>
                     <td width="20%">@department.CreateAt</td>
                     <td width="20%">@department.UpdateAt</td>
-                    <td width="15%"><a class="btn btn-info " asp-controller="Report" asp-action="TiketByDepartment" asp-route-Id="@department.Id">View Report</a></td>
-                    <td width="5%">
-                        
-          
-                        <a asp-controller="Department" asp-action="Create" asp-route-Id="@department.Id"><i class=" bi-pencil-square text-primary"></i></a>
+                    <td width="25%">
+
+
+                        <a class="btn btn-outline-success " asp-controller="Report" asp-action="TiketByDepartment" asp-route-Id="@department.Id"><i class="bi bi-file-earmark-text"></i> Report</a>
                         &nbsp;
-                        <form asp-action="Delete_Department" method="post" style="display:inline;">
-                            <input type="hidden" name="Id" value="@department.Id" />
-                            <button type="submit" class="btn btn-link p-0 m-0 border-0 text-danger" onclick="return confirm('Are you sure you want to delete this item?');">
-                                <i class="bi-trash3"></i>
-                            </button>
-                        </form>
+
+                        <button type="button" class="btn btn-outline-primary btnEditDepartment" data-toggle="modal" data-target="#EditDepartment" data-url="@Url.Action($"Edit", new { Id = department.Id })"><i class=" bi-pencil-square text-primary"></i> Edit</button>
+
+                        &nbsp;
+                        <a class="btn btn-outline-info " asp-controller="Department" asp-action="Details" asp-route-Id="@department.Id"><i class="bi bi-people"></i> Users</a>
+                        &nbsp;
+
+                        <button type="button"
+                                class="btn btn-link p-0 m-0 border-0 text-danger btnDelete"
+                                data-bs-toggle="modal"
+                                data-id="@department.Id">
+                            <i class="bi-trash3"></i>
+                        </button>
                     </td>
                   
     </tr>
@@ -50,8 +64,96 @@
 
     </table>
 
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+
+
+    @await Html.PartialAsync("_Create", new Department())
+    <div id="editSection"></div> <!-- سيتم تحميل محتوى _Edit هنا -->
+
+    <div class="modal fade" id="deletDepartment">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Delete_Department" method="post">
+                    <input name="Id" hidden />
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Alert !!</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure to delete this department?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">Yes</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 
 </div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 
-                            
+    <script>
+        // فتح مودال الإنشاء
+        $('.btnCreateDepartment').click(() => {
+            $('#CreateDepartment').modal('show');
+        });
+
+        // فتح مودال التعديل (ajax)
+        $('.btnEditDepartment').click(function (e) {
+            e.preventDefault();
+            const url = $(this).data('url');
+            $.get(url, function (data) {
+                $('#editSection').html(data);
+                $('#EditDepartment').modal('show');
+            });
+        });
+
+        // فتح مودال الحذف
+        $('.btnDelete').click(function (e) {
+            e.preventDefault();
+            const id = $(this).data('id');
+            $('#deletDepartment input[name="Id"]').val(id);
+            $('#deletDepartment').modal('show');
+        });
+
+        // الحفظ عبر ajax
+        $(document).on('submit', '#departmentForm', function (e) {
+            e.preventDefault();
+            const form = $(this);
+            const url = form.attr('action');
+            const formData = form.serialize();
+
+            $.post(url, formData)
+                                    .done(function (result) {
+                                        if (result.success) {
+                                            $('.modal').modal('hide');
+                                            setTimeout(() => {
+                                                location.reload();
+                                            }, 300);
+                                        } else {
+                                            // عرض النموذج مع الأخطاء من السيرفر
+                                            if (url.toLowerCase().includes('edit')) {
+                                                $('#editSection').html(result);
+                                                $('#EditDepartment').modal('show');
+                                            } else {
+                                                $('#CreateDepartment .modal-content').html($(result).find('.modal-content').html());
+                                                $('#CreateDepartment').modal('show');
+                                            }
+                                        }
+                                    });
+                         });
+    </script>
+}

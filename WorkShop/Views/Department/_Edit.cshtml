@@ -1,0 +1,40 @@
+﻿@model Department
+@{
+    ViewData["Title"] = "Edit";
+}
+
+
+<div class="modal fade" id="EditDepartment">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="departmentForm" asp-controller="Department" asp-action="Edit">
+              
+                <div class="modal-header">
+                    <h4>Edit Department</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </div>
+                <div class="modal-body">
+                    <div class=" mb-3">
+                        <input name="Id" asp-for="Id" hidden />
+                        <label asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                </div>
+                <div asp-validation-summary="All"></div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
