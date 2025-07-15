@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using WorkShop.Enums;
 using WorkShop.Models;
@@ -37,13 +39,13 @@ namespace WorkShop.Controllers
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
                 _unitOfWork.products.FindAll("department").ToList():
-                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm), "department").ToList();
+                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
             }
             else
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
                         _unitOfWork.products.FindAll("department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList() :
-                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.SerialNumber.Contains(searchTerm), "department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList();
+                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList();
               
 
 
@@ -164,7 +166,7 @@ namespace WorkShop.Controllers
                         existingProduct.imagePath = filename;
                     }
                     existingProduct.Name = product.Name;
-                    existingProduct.SerialNumber = product.SerialNumber;
+                    existingProduct.PartNumber = product.PartNumber;
                     existingProduct.Desc = product.Desc;
                     existingProduct.DepartmentId = product.DepartmentId;
                   
@@ -185,8 +187,9 @@ namespace WorkShop.Controllers
 
         }
 
-        public IActionResult Delete(int? id)
+        public   IActionResult Delete(int? id)
         {
+            try { 
             var product = _unitOfWork.products.FindById(id);
             if (product == null)
             {
@@ -196,6 +199,25 @@ namespace WorkShop.Controllers
             _unitOfWork.products.Delete(product.Id);
 
             return RedirectToAction("Index");
+                        }
+            catch (DbUpdateException dbEx)
+            {
+                // فحص إذا كان الخطأ بسبب ارتباط المستخدم ببيانات أخرى
+                if (dbEx.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+                {
+                    TempData["DeleteError"] = "The store cannot be deleted because it is associated with other data..";
+                }
+                else
+                {
+                    TempData["DeleteError"] = "An error occurred during the deletion process.";
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex){
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
+                return View("Index");
+            }
 
         }
 

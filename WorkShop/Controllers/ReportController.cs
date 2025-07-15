@@ -1,9 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ExcelDataReader;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkShop.Enums;
 using WorkShop.Repository;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
+using System.Data;
+using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
+using NuGet.Packaging.Signing;
 
 namespace WorkShop.Controllers
 {
@@ -103,5 +109,76 @@ namespace WorkShop.Controllers
 
             return View(ticketCount);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+
+        public async Task<IActionResult> ImportExcel(IFormFile file,string TableName)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "❌ Excel not found.";
+                return RedirectToAction("Index", "Product");
+            }
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            using var strem = file.OpenReadStream();
+            using var reader = ExcelReaderFactory.CreateReader(strem);
+
+            var conf = new ExcelDataSetConfiguration
+            {
+                ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                {
+
+                    UseHeaderRow = true
+                }
+
+
+            };
+
+            var result = reader.AsDataSet(conf);
+            var table = result.Tables[0];
+
+
+            // مثال على الاتصال بقاعدة البيانات
+            var connectionString = "server=DESKTOP-E8AEC1J\\WORKSHOP;user Id=sa;password=P@ssw0rd;database=Workshop;TrustServerCertificate=True";
+
+            using var sqlConnection = new SqlConnection(connectionString);
+            sqlConnection.Open();
+
+            using var bulkCopy = new SqlBulkCopy(sqlConnection)
+            {
+                DestinationTableName = TableName
+            };
+
+            // تأكد أن أسماء الأعمدة متطابقة
+            foreach (DataColumn col in table.Columns)
+            {
+                bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+            }
+
+            try
+            {
+                bulkCopy.WriteToServer(table);
+                TempData["Success"] = "Import Successfully";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error :" + ex.Message;
+            }
+
+            return RedirectToAction("Index", "Product");
+
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "❌ خطأ: " + ex.Message;
+                return RedirectToAction("Index");
+            }
+        
     }
-}
+
+
+        }
+    }

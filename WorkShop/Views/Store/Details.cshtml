@@ -1,38 +1,76 @@
-﻿@model WorkShop.Models.Store
+﻿@model WorkShop.ViewModel.StoreDetailsViewModel
 
-<h2 class="text-center">تفاصيل القسم</h2>
+
 
 <div>
-    <div class="d-flex justify-content-between"><h3>@Model.Name</h3><h4>المستودع</h4></div>
+    <div class="d-flex justify-content-between"><h3>@Model.store</h3><h4>Warehouse</h4></div>
     <hr />
-    <h4 class="text-center">المنتجات  في هذا المستودع</h4>
+    <h4 class="text-center">Products in the store</h4>
 
-    @if (Model.productStocks != null && Model.productStocks.Any())
+    @if (Model.products != null && Model.products.Any())
     {
         <table class="table shadow table-hover">
             <thead>
                 <tr>
-                    <th>الاسم</th>
-                    <th>القسم</th>
-                    <th>الكمية</th>
+                    <th>Product</th>
+                    <th>Store</th>
+                    <th>Qty</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var productSK in Model.productStocks)
+                @foreach (var productSK in Model.products)
                 {
                     <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create", "Product", new { id = productSK.productId })'">
                         <td>@productSK.product.Name</td>
-                        <td>@Model.Name</td>
+                        <td>@Model.store</td>
                         <td>@productSK.quantity</td>
                     </tr>
                 }
             </tbody>
         </table>
+    
+        int maxPagesToShow = 5;
+        int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
+        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+
+        // تعديل البداية إذا اقتربنا من النهاية
+        if (endPage - startPage < maxPagesToShow - 1)
+        {
+            startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+        }
+    
+
+    <nav>
+        <ul class="pagination justify-content-center">
+
+            <!-- زر السابق -->
+            <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Details", new { page = i })">@i</a>
+                </li>
+            }
+
+            <!-- زر التالي -->
+            <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage + 1 })" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
     }
     else
     {
-        <p>لا يوجد منتجات  في هذا المستودع.</p>
+        <p>No products Avilable in the Warehouse.</p>
     }
 </div>
 
-<a asp-action="Index" class=" btn btn-danger">عودة</a>
+<a asp-action="Index" class=" btn btn-danger">Back</a>

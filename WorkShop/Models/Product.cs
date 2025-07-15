@@ -12,7 +12,7 @@ namespace WorkShop.Models
         public string Desc { get; set; }
         [Required(ErrorMessage = "الرقم التسلسي  مطلوب")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "الرقم التسلسي  يجب أن يكون بين 3 و 100 حرف")]
-        public string SerialNumber { get; set; }
+        public string PartNumber { get; set; }
 
         public string? imagePath { get; set;}
         [NotMapped]

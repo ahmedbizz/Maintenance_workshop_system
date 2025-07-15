@@ -50,7 +50,8 @@ namespace WorkShop.Enums
                     FullName = "Administrator",
                     UserName = "Admin@Admin.com",
                     Email = "Admin@Admin.com",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    PhoneNumber = "0547671817"
                 };
 
                var result = await _UserManager.CreateAsync(NewAdmin, "P@ssw0rd");

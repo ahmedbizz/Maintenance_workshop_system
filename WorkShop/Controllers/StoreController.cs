@@ -65,16 +65,34 @@ namespace WorkShop.Controllers
             return View(viewModel);
         }
 
-        public IActionResult Details(int? Id)
+        public IActionResult Details(int? Id,int page = 1)
         {
-
-            var result = _unitOfWork.stores.FindAll("productStocks.product").FirstOrDefault(r => r.Id == Id);
-            if(result == null)
+            if (Id == null)
             {
-                return NotFound();                
+                TempData["Error"] = "❌ Store ID is required.";
+                return RedirectToAction("Index", "Store");
+            }
+            var pageSize = 10;
+            var store = _unitOfWork.stores.FindById(Id);
+            if (store == null)
+            {
+                TempData["Error"] = "❌ Store not found.";
+                return RedirectToAction("Index", "Store");
             }
 
-            return View(result);
+            var products = _unitOfWork.productStoks.FindAll("product").Where(p => p.storeId == Id).ToList();
+            var total = products.Count;
+            var paged = products.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var ViewModel = new StoreDetailsViewModel
+            {
+                store = store.Name,
+                products = paged,
+                TotalPages = (int)Math.Ceiling((double)total / pageSize),
+                CurrentPage =page
+
+            };
+
+            return View(ViewModel);
         }
 
         [HttpGet]

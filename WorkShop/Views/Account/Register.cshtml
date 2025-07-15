@@ -70,6 +70,8 @@
             <div class="d-grid">
                 <button type="submit" class="btn btn-primary">@Localizer["Register"]</button>
             </div>
+
+            <div asp-validation-summary="All"></div>
         </form>
         <a class="nav-link text-dark m-3" asp-controller="Account" asp-action="Login">@Localizer["Account"]</a>
     </div>
