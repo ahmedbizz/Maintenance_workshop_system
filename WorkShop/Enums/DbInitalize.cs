@@ -23,9 +23,21 @@ namespace WorkShop.Enums
             //Check Role exist 
 
 
-            if(! await _RoleManager.RoleExistsAsync(Roles.Admin)){
-                await _RoleManager.CreateAsync(new IdentityRole(Roles.Admin));
+
+            // قائمة بجميع الأدوار المطلوبة
+            var roles = new[] { Roles.Admin, Roles.Engineer, Roles.Technion, Roles.Officer };
+
+            // التأكد من وجود كل دور وإنشاؤه إذا لم يكن موجودًا
+
+            foreach (var role in roles)
+            {
+                if (!await _RoleManager.RoleExistsAsync(role))
+                {
+                    await _RoleManager.CreateAsync(new IdentityRole(role));
+                }
             }
+
+
 
             //Check Department exist
 

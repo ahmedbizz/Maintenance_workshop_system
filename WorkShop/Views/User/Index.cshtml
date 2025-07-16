@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Users";
 }
-
+@using System.Text.Json
 <div class="row pt-4 align-items-center">
     <div class="d-flex justify-content-between align-items-center">
     <div class="col-2">
@@ -15,13 +15,22 @@
                 <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
             </form>
     </div>
+
+        <button type="button"
+                class="btn btn-light btnImportExcel"
+                data-bs-toggle="modal"
+                data-bs-target="#ImportExcel">
+            <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+        </button>
+
     <div class="col-2 text-end align-items-center">
+
         <a asp-action="Create_user_Edite" asp-controller="User"  class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
 
     </div>
     </div>
     <table class="table tab-content shadow m-4 p-2 table-hover">
-        <thead>
+        <thead class="table-dark">
             <tr class="text-center">
                 <th>Img</th>
                 <th>Name</th>
@@ -63,20 +72,88 @@
 
     </table>
 
+    @{
+        int maxPagesToShow = 5;
+        int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
+        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+
+        // تعديل البداية إذا اقتربنا من النهاية
+        if (endPage - startPage < maxPagesToShow - 1)
+        {
+            startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+        }
+    }
+
     <nav>
         <ul class="pagination justify-content-center">
-            @for (int i = 1; i <= Model.TotalPages; i++)
+
+            <!-- زر السابق -->
+            <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            @for (int i = startPage; i <= endPage; i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                     <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
                 </li>
             }
+
+            <!-- زر التالي -->
+            <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
         </ul>
     </nav>
-    @if (TempData["Error"] != null)
-    {
-        <p>Are you sure to delete this User?</p>
-    }
+</div>
+@* //Import From Excel *@
+<div class="modal fade" id="ImportExcel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="ImportExcel" asp-controller="Report" method="post" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Excel !!</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Table Name:</label>
+                        <input name="TableName" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Excel file:</label>
+                        <input type="file" name="file" accept=".xls,.xlsx" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Import</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     <div class="modal fade" id="deleteUser">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -117,9 +194,10 @@
     </div>
 
 </div>
-@section Scripts{
+
+@section Scripts {
     <script>
-            // فتح مودال الحذف
+                    // فتح مودال الحذف
         $('.btnDelete').click(function (e) {
             e.preventDefault();
             const id = $(this).data('id');
@@ -127,14 +205,27 @@
             $('#deleteUser').modal('show');
         });
 
-                $(document).ready(function () {
+        $('.btnImportExcel').click(function (e) {
+          $('#ImportExcel').modal('show');
+        });
+            $(document).ready(function () {
             var errorMessage = '@TempData["DeleteError"]';
             if (errorMessage && errorMessage.trim() !== "") {
                 var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
                 errorModal.show();
             }
         });
+
+                $(document).ready(function () {
+            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+
+            let message = success || error;
+            if (message && message.trim() !== "") {
+                $('#modalMessage').text(message);
+                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+                modal.show();
+            }
+        });
     </script>
-
-}
-
+    }
