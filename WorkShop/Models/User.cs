@@ -25,10 +25,9 @@ namespace WorkShop.Models
         public DateTime UpdateAt { get; set; }
 
         [Required(ErrorMessage = "Please select a department.")]
-        public int DepartmentId { get; set; }
-        [ForeignKey("DepartmentId")]
-        public Department? department { get; set; }
-
+        public ICollection<UserDepartment> UserDepartments { get; set; } = new List<UserDepartment>();
+        [NotMapped]
+        public List<int> SelectedDepartmentIds { get; set; } = new List<int>();
         public ICollection<Order>? orders { get; set; }
         public ICollection<UserGroup>? UserGroups { get; set; }
 

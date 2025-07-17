@@ -75,10 +75,14 @@ namespace WorkShop.Controllers
                 FullName = model.FullName,
                 PhoneNumber = model.PhoneNumber,
                 birthDay = model.birthDay,
-                DepartmentId = model.DepartmentId,
+                UserDepartments = model.SelectedDepartmentIds.Select(id => new UserDepartment
+                {
+                    DepartmentId = id
+                }).ToList(),
                 CreateAt = DateTime.Now,
                 UpdateAt = DateTime.Now
             };
+         
             string filename = string.Empty;
             if (model.Image != null && model.Image.Length >0){
 

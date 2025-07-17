@@ -49,23 +49,15 @@
                     }
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
-                    <div class=" mb-3">
-                        <label asp-for="DepartmentId" class="form-label">Depatment</label>
-                    @if (User.IsInRole(Roles.Admin))
-                    {
-                        <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments">
-                            <option value="">--Select one--</option>
-                        </select>
-                    }
-                    else
-                    {
-                        <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments" disabled>
-                            <option value="">--Select one--</option>
-                        </select>
-                        <input type="hidden" asp-for="DepartmentId" />
-                    }
-                    <span asp-validation-for="DepartmentId" class="text-danger"></span>
-                    </div>
+                <div class="mb-3">
+                    <label asp-for="SelectedDepartmentIds" class="form-label">Department</label>
+                    <select asp-for="SelectedDepartmentIds"
+                            asp-items="ViewBag.Departments"
+                            multiple
+                            class="form-control select2-dropdown">
+                    </select>
+                    <span asp-validation-for="SelectedDepartmentIds" class="text-danger"></span>
+                </div>
                 
 
                 <div class=" mb-3">
@@ -110,6 +102,14 @@
             }
             reader.readAsDataURL(event.target.files[0]);
         }
+
+                $(document).ready(function () {
+            $('.select2-dropdown').select2({
+                placeholder: "Select departments",
+                tags: true, // يضيف اختيارات كمربعات
+                width: '100%'
+            });
+        });
     </script>
 }
 

@@ -33,6 +33,7 @@ namespace WorkShop.Controllers
         public  async Task<IActionResult> Index(string? searchTerm , int page =1)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Store> query;
             var pageSize = 10;
@@ -45,8 +46,8 @@ namespace WorkShop.Controllers
             else
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
-                    _unitOfWork.stores.FindAll("department").Where(s => s.DepartmentId == curentUser.DepartmentId).ToList() :
-                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm) && s.DepartmentId == curentUser.DepartmentId).ToList();
+                    _unitOfWork.stores.FindAll("department").Where(s => userDepartmentIds.Contains(s.DepartmentId)).ToList() :
+                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm) && userDepartmentIds.Contains(s.DepartmentId)).ToList();
 
             }
             var strors = query.ToList();
@@ -99,6 +100,7 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer +","+Roles.Admin)]
         public async Task <IActionResult> Create(int? Id) {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser,Roles.Admin);
             List<Department> departments;
 
@@ -109,7 +111,7 @@ namespace WorkShop.Controllers
             }
             else
             {
-                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
             }
             ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (Id == null || Id == 0)
@@ -244,10 +246,10 @@ namespace WorkShop.Controllers
             }
   
             var engnieers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
-            var engineer = engnieers.FirstOrDefault(e => e.DepartmentId == device.DepartmentId);
+            var engineer = engnieers.FirstOrDefault(e => e.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId));
 
             var Officers = await _userManager.GetUsersInRoleAsync(Roles.Officer);
-            var DepartmentOfficers = Officers.Where(o => o.DepartmentId == device.DepartmentId).ToList();
+            var DepartmentOfficers = Officers.Where(o => o.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId)).ToList();
 
 
             // سجل الحدث

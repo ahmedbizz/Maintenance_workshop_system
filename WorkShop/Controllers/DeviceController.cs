@@ -53,10 +53,11 @@ namespace WorkShop.Controllers
                 };
             var pageSize = 10;
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             IQueryable<Device>  query = string.IsNullOrEmpty(searchTerm) ?
-                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => d.DepartmentId == curentUser.DepartmentId).AsQueryable():
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable():
                  _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
-                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => d.DepartmentId == curentUser.DepartmentId).AsQueryable(); ;
+                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable(); ;
          
             foreach (var filter in filters)
             {
@@ -82,9 +83,13 @@ namespace WorkShop.Controllers
         {
             var Tech_ALL= await _userManager.GetUsersInRoleAsync("Technion");
             var user = await _userManager.GetUserAsync(User);
+            if(user == null)
+            {
+                return NotFound();
+            }
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
 
-    
-            if (user?.DepartmentId == null)
+            if (userDepartmentIds == null)
             {
                 TempData["Error"] = "Access Denied.";
                 return RedirectToAction("Index");
@@ -92,13 +97,13 @@ namespace WorkShop.Controllers
             var viewModel = new AddDeviceViewModel
             {
                 Products = _unitOfWork.products.FindAll()
-                .Where(p => p.DepartmentId == user.DepartmentId)
+                .Where(p => userDepartmentIds.Contains(p.DepartmentId))
                 .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }),
                 Departments = _unitOfWork.departments.FindAll()
-                .Where(d => d.Id == user.DepartmentId)
+                .Where(d => userDepartmentIds.Contains(d.Id))
                 .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }),
                 Technicians = Tech_ALL
-                .Where(t => t.DepartmentId == user.DepartmentId)
+                .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
                 .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.FullName })
             };
             return View(viewModel);
@@ -110,8 +115,12 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> AddDevice(AddDeviceViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
-
-            if (user?.DepartmentId == null)
+            if(user == null)
+            {
+                return NotFound();
+            }
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+            if (userDepartmentIds == null)
             {
                 TempData["Error"] = "Access Denied";
                 return RedirectToAction("Index");
@@ -120,15 +129,15 @@ namespace WorkShop.Controllers
             void PopulateDropDowns()
             {
                 model.Departments = _unitOfWork.departments.FindAll()
-                    .Where(d => d.Id == user.DepartmentId)
+                    .Where(d => userDepartmentIds.Contains(d.Id))
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name });
 
                 model.Products = _unitOfWork.products.FindAll()
-                    .Where(p => p.DepartmentId == user.DepartmentId)
+                    .Where(p => userDepartmentIds.Contains(p.DepartmentId))
                     .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name });
 
                 model.Technicians = _unitOfWork.users.FindAll()
-                    .Where(t => t.DepartmentId == user.DepartmentId)
+                    .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
                     .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.FullName });
             }
             if (!ModelState.IsValid)
@@ -138,7 +147,7 @@ namespace WorkShop.Controllers
          
             }
             // تحقق من الانتماء للقسم
-            if (user.DepartmentId != model.DepartmentId)
+            if (userDepartmentIds.Contains(model.DepartmentId))
             {
                 ModelState.AddModelError("", "Access Denied");
                 PopulateDropDowns();
@@ -215,10 +224,15 @@ namespace WorkShop.Controllers
         {
 
             var currentUser = await _userManager.GetUserAsync(User);
+            if(currentUser == null)
+            {
+                return NotFound();
+            }
+            var userDepartmentIds = currentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             if (currentUser == null)
                 return Unauthorized();
             var devices = _unitOfWork.devices.FindAll("Product", "Department", "Technician")
-                .Where(d => d.TechnicianId == currentUser.Id && d.DepartmentId == currentUser.DepartmentId 
+                .Where(d => d.TechnicianId == currentUser.Id && userDepartmentIds.Contains(d.DepartmentId) 
                 && d.Status != "Repaired")
                 .ToList();
 
@@ -231,8 +245,8 @@ namespace WorkShop.Controllers
             try { 
             var currentUser = await _userManager.GetUserAsync(User);
             var isEngineer = await _userManager.IsInRoleAsync(currentUser, "Engineer");
+            var userDepartmentIds = currentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
 
-              
 
                 var query = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product");
                 Device device;
@@ -240,7 +254,7 @@ namespace WorkShop.Controllers
                 {
                     // المهندس يشاهد الأجهزة في قسمه
                     device = query.FirstOrDefault(d =>
-                        d.DepartmentId == currentUser.DepartmentId && d.Id == Id);
+                       userDepartmentIds.Contains(d.DepartmentId) && d.Id == Id);
                 }
                 else
                 {
@@ -254,7 +268,7 @@ namespace WorkShop.Controllers
 
                 var spareRequest = device.SparePartRequests.SelectMany(r => r.Items).ToList();
                 var availableStores = _unitOfWork.stores.FindAll()
-                                    .Where(s => s.DepartmentId == currentUser.DepartmentId)
+                                    .Where(s =>userDepartmentIds.Contains(s.DepartmentId))
                                     .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
                                     .ToList();
         
@@ -296,7 +310,7 @@ namespace WorkShop.Controllers
 
                     },
                     Products = _unitOfWork.products.FindAll()
-                        .Where(p => p.DepartmentId == currentUser.DepartmentId)
+                        .Where(p => userDepartmentIds.Contains(p.DepartmentId))
                         .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
                         .ToList()
                 };

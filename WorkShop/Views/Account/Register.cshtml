@@ -46,11 +46,11 @@
 
             <!-- القسم -->
             <div class="mb-3">
-                <label asp-for="DepartmentId" class="form-label">@Localizer["Department"]</label>
-                <select asp-for="DepartmentId" class="form-control" asp-items="ViewBag.Departments">
+                <label asp-for="SelectedDepartmentIds" class="form-label">@Localizer["Department"]</label>
+                <select asp-for="SelectedDepartmentIds" class="form-control" multiple asp-items="ViewBag.Departments">
                     <option value="">-- @Localizer["SelectOne"] --</option>
                 </select>
-                <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                <span asp-validation-for="SelectedDepartmentIds" class="text-danger"></span>
             </div>
 
             <!-- كلمة المرور -->

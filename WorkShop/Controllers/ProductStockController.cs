@@ -23,6 +23,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<ProductStock> query;
             var pageSize = 10;
@@ -35,8 +36,8 @@ namespace WorkShop.Controllers
             else
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
-                        _unitOfWork.productStoks.FindAll("product", "store").Where(p => p.product.DepartmentId == curentUser.DepartmentId).ToList() :
-                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").Where(p => p.product.DepartmentId == curentUser.DepartmentId).ToList();
+                        _unitOfWork.productStoks.FindAll("product", "store").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList() :
+                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList();
 
 
 
@@ -66,6 +67,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Create(int? proId, int? storeId)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 
             if (isAdmin)
@@ -75,8 +77,8 @@ namespace WorkShop.Controllers
             }
             else
             {
-                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s =>s.DepartmentId == curentUser.DepartmentId), "Id", "Name");
-                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => p.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => userDepartmentIds.Contains(s.DepartmentId)), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => userDepartmentIds.Contains(p.DepartmentId)), "Id", "Name");
             }
             // إذا لم يتم تمرير المفاتيح، نعرض نموذج فارغ
             if (proId == null || storeId == null)
@@ -94,6 +96,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Create(ProductStock stock)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 
             if (isAdmin)
@@ -103,8 +106,8 @@ namespace WorkShop.Controllers
             }
             else
             {
-                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => s.DepartmentId == curentUser.DepartmentId), "Id", "Name");
-                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => p.DepartmentId == curentUser.DepartmentId), "Id", "Name");
+                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => userDepartmentIds.Contains(s.DepartmentId)), "Id", "Name");
+                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => userDepartmentIds.Contains(p.DepartmentId)), "Id", "Name");
             }
             if (ModelState.IsValid)
             {

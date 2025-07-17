@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace WorkShop.ViewModel
 {
@@ -21,8 +22,11 @@ namespace WorkShop.ViewModel
         public string ConfirmPassword { get; set; }
         public DateTime birthDay { get; set; }
 
-        public int DepartmentId { get; set; }
- 
+        // الأقسام المختارة في النموذج (ID فقط)
+        public List<int> SelectedDepartmentIds { get; set; }
+
+        // قائمة الأقسام لتعبئة الـ DropdownList أو Checkbox في الـ View
+        public List<SelectListItem> Departments { get; set; }
 
         public IFormFile? Image { get; set; }
         public string? imagePath { get; set; }

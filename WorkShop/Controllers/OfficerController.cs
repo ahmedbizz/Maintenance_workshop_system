@@ -30,8 +30,9 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> ReviewPartsRequestsByOfficer()
         {
             var user = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var devices = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard")
-                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard.Status == "ApprovedByEngineer").ToList();
+                .Where(d => userDepartmentIds.Contains(d.DepartmentId) && d.MaintenanceCard.Status == "ApprovedByEngineer").ToList();
             return View(devices);
         }
 
@@ -59,7 +60,7 @@ namespace WorkShop.Controllers
             request.ManagerId = Officer.Id;
             card.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
             var StoreAdmins = await _userManager.GetUsersInRoleAsync(Roles.StoreKeeper);
-            var Storeuser = StoreAdmins.Where(s => s.DepartmentId == device.DepartmentId).ToList();
+            var Storeuser = StoreAdmins.Where(s => s.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId)).ToList();
             await _unitOfWork.CompleteAsync();
             // سجل الحدث
             var logTask = _logService.LogAsync(

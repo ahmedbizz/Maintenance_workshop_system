@@ -32,13 +32,14 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> ReviewPartsRequests(string searchTerm, int page = 1)
         {
             var user = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var pageSize = 10;
             var query = string.IsNullOrEmpty(searchTerm) ?
                  _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard")
-                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString()) :
+                .Where(d => userDepartmentIds.Contains(d.DepartmentId) && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString()) :
                 _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm) || d.Product.Name.Contains(searchTerm)
                 , "Product", "Department", "Technician", "MaintenanceCard")
-                .Where(d => d.DepartmentId == user.DepartmentId && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString());
+                .Where(d => userDepartmentIds.Contains(d.DepartmentId) && d.MaintenanceCard != null && d.MaintenanceCard.Status == MaintenanceStatus.NeedsParts.ToString());
             var totalDevice = query.Count();
             var devices = query.Skip((page - 1) * pageSize)
                 .Take(pageSize).ToList();
@@ -113,7 +114,7 @@ namespace WorkShop.Controllers
                   );
             var officers = await _userManager.GetUsersInRoleAsync("Officer");
             var officer = officers
-                .FirstOrDefault(u => u.DepartmentId == request.Device.DepartmentId);
+                .FirstOrDefault(u => u.UserDepartments.Any(u => u.DepartmentId == request.Device.DepartmentId));
             Task NotifyOfficer;
             if (officer != null)
             {

@@ -16,7 +16,7 @@ namespace WorkShop.Models
 
         public DateTime UpdateAt { get; set; } = DateTime.Now;
 
-        public ICollection<User> users { get; set; } = new List<User>();
+        public ICollection<UserDepartment> UserDepartments { get; set; } = new List<UserDepartment>();
 
         public ICollection<Order> orders { get; set; } = new List<Order>();
 

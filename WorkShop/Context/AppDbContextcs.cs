@@ -14,20 +14,17 @@ namespace WorkShop.Context
 
         public DbSet<Product> products { get; set; }
         public DbSet<Order> orders { get;   set; }
-
         public DbSet<Store> stores { get; set; }
-
         public DbSet<Department> departments { get; set; }
         public DbSet<Device> device { get; set; }
         public DbSet<MaintenanceCard> maintenanceCards { get; set; }
         public DbSet<DeviceLogs> deviceLogs { get; set; }
         public DbSet<SparePartRequest> sparePartRequests { get; set; }
         public DbSet<Notification> notifications { get; set; }
-
-
         public DbSet<Group> groups { get; set; }
         public DbSet<UserGroup> userGroups { get; set; }
         public DbSet<GroupRole> groupRoles { get; set; }
+        public DbSet<UserDepartment> UserDepartments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -37,6 +34,19 @@ namespace WorkShop.Context
                 .WithOne(m => m.Device)
                 .HasForeignKey<MaintenanceCard>(m => m.DeviceId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserDepartment>()
+                 .HasKey(ud => new { ud.UserId, ud.DepartmentId });
+
+            modelBuilder.Entity<UserDepartment>()
+                .HasOne(ud => ud.User)
+                .WithMany(u => u.UserDepartments)
+                .HasForeignKey(ud => ud.UserId);
+
+            modelBuilder.Entity<UserDepartment>()
+                .HasOne(ud => ud.Department)
+                .WithMany(d => d.UserDepartments)
+                .HasForeignKey(ud => ud.DepartmentId);
 
             foreach (var item in modelBuilder.Model.GetEntityTypes()
                 .SelectMany( m => m .GetForeignKeys()))

@@ -32,6 +32,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Product> query;
             var pageSize = 10;
@@ -44,8 +45,8 @@ namespace WorkShop.Controllers
             else
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
-                        _unitOfWork.products.FindAll("department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList() :
-                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").Where(p => p.DepartmentId == curentUser.DepartmentId).ToList();
+                        _unitOfWork.products.FindAll("department").Where(p =>userDepartmentIds.Contains(p.DepartmentId)).ToList() :
+                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").Where(p => userDepartmentIds.Contains(p.DepartmentId)).ToList();
               
 
 
@@ -80,6 +81,7 @@ namespace WorkShop.Controllers
         {
 
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Department> departments;
 
@@ -90,7 +92,7 @@ namespace WorkShop.Controllers
             }
             else
             {
-                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
             }
             ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (Id == null || Id == 0)
@@ -109,6 +111,7 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> Create(Product product)
         {
             var curentUser = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Department> departments;
 
@@ -119,7 +122,7 @@ namespace WorkShop.Controllers
             }
             else
             {
-                departments = _unitOfWork.departments.FindAll().Where(d => d.Id == curentUser.DepartmentId).ToList();
+                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
             }
             ViewBag.Departments = new SelectList(departments, "Id", "Name");
             if (ModelState.IsValid)

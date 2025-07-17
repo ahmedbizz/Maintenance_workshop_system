@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Data;
+using System.Linq;
 using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
@@ -32,13 +33,20 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> SubmitReport(DeviceDetailsViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var device = _unitOfWork.devices
                 .FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product")
                 .FirstOrDefault(d => d.Id == model.DeviceId);
+           if(device == null)
+            {
+                return NotFound();
+            }
+            
             var managers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
-            var DepartmentManger = managers.Where(m => m.DepartmentId == device.DepartmentId).ToList();
+            var DepartmentManger = managers.Where(m => m.UserDepartments.Any( u => u.DepartmentId == device.DepartmentId)).ToList();
+
             var Officers = await _userManager.GetUsersInRoleAsync(Roles.Officer);
-            var DepartmentOfficer = Officers.Where(m => m.DepartmentId == device.DepartmentId).ToList();
+            var DepartmentOfficer = Officers.Where(o => o.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId)).ToList();
             if (device == null) return NotFound();
 
             var card = _unitOfWork.maintenanceCards

@@ -41,9 +41,9 @@ namespace WorkShop.Controllers
             var pageSize = 10;
 
             var query = string.IsNullOrEmpty(searchTerm) ?
-                _unitOfWork.users.FindAll("department") :
+                _unitOfWork.users.FindAll("UserDepartments.Department") :
                 _unitOfWork.users.SearchBycondition(u => u.FullName.Contains(searchTerm) ||
-                u.Email.Contains(searchTerm),"department");
+                u.Email.Contains(searchTerm), "UserDepartments.Department");
             int totalItems = query.Count();
 
             var users = query.Skip((page - 1) * pageSize)
@@ -87,7 +87,8 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create_user_Edite(User user)
         {
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+            ViewBag.Departments = new MultiSelectList(_unitOfWork.departments.FindAll(), "Id", "Name", user.SelectedDepartmentIds);
+
             var currentUser = await _userManager.GetUserAsync(User);
             if (!ModelState.IsValid)
                 return View(user);
@@ -101,24 +102,30 @@ namespace WorkShop.Controllers
                 if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
                 unigName = Guid.NewGuid().ToString() + Path.GetExtension(user.clientFile.FileName);
                 string fullPath = Path.Combine(uploadFolder, unigName);
-                using (var strem =new FileStream(fullPath, FileMode.Create))
+                using (var stream = new FileStream(fullPath, FileMode.Create))
                 {
-                    await user.clientFile.CopyToAsync(strem);
+                    await user.clientFile.CopyToAsync(stream);
                 }
-                   
             }
+
             var existingUser = await _userManager.FindByIdAsync(user.Id);
             if (existingUser == null)
             {
-                // إضافة مستخدم جديد
+                // ✅ إضافة مستخدم جديد
                 user.UserName = user.Email;
                 user.Email = user.Email;
                 user.NormalizedEmail = user.Email.ToUpper();
                 user.NormalizedUserName = user.Email.ToUpper();
                 user.CreateAt = DateTime.Now;
                 user.UpdateAt = DateTime.Now;
+
                 if (unigName != null)
                     user.imagePath = unigName;
+
+                // ✅ إنشاء علاقات الأقسام للمستخدم الجديد
+                user.UserDepartments = user.SelectedDepartmentIds
+                    .Select(depId => new UserDepartment { DepartmentId = depId, UserId = user.Id })
+                    .ToList();
 
                 var result = await _userManager.CreateAsync(user, "P@ssw0rd");
                 if (!result.Succeeded)
@@ -127,28 +134,27 @@ namespace WorkShop.Controllers
                         ModelState.AddModelError("", error.Description);
                     return View(user);
                 }
-            
+
+                await _unitOfWork.CompleteAsync(); // فقط مرة واحدة تكفي
+
                 return RedirectToAction("Index");
             }
             else
             {
-                // تعديل مستخدم موجود
-                var existUser = await _userManager.FindByIdAsync(user.Id);
-                if (existUser == null) return NotFound();
+                // ✅ تعديل مستخدم موجود
+                existingUser.Email = user.Email;
+                existingUser.UserName = user.Email;
+                existingUser.NormalizedEmail = user.Email.ToUpper();
+                existingUser.NormalizedUserName = user.Email.ToUpper();
+                existingUser.PhoneNumber = user.PhoneNumber;
+                existingUser.FullName = user.FullName;
+                existingUser.birthDay = user.birthDay;
+                existingUser.UpdateAt = DateTime.Now;
 
-                existUser.Email = user.Email;
-                existUser.UserName = user.Email;
-                existUser.NormalizedEmail = user.Email.ToUpper();
-                existUser.NormalizedUserName = user.Email.ToUpper();
-                existUser.PhoneNumber = user.PhoneNumber;
-                existUser.FullName = user.FullName;
-                existUser.DepartmentId = user.DepartmentId;
-                existUser.birthDay = user.birthDay;
-                existUser.UpdateAt = DateTime.Now;
                 if (unigName != null)
-                    existUser.imagePath = unigName;
+                    existingUser.imagePath = unigName;
 
-                var result = await _userManager.UpdateAsync(existUser);
+                var result = await _userManager.UpdateAsync(existingUser);
                 if (!result.Succeeded)
                 {
                     foreach (var error in result.Errors)
@@ -156,12 +162,27 @@ namespace WorkShop.Controllers
                     return View(user);
                 }
 
-                if (User.IsInRole(Roles.Admin))
-                    return RedirectToAction("Index", "User");
-                else
-                    return RedirectToAction("Index", "Home");
+                // ✅ تحديث الأقسام (حذف القديم + إضافة الجديد)
+                var oldDeps = _unitOfWork.UserDepartments.FindAll().Where(ud => ud.UserId == existingUser.Id).ToList();
+                _unitOfWork.UserDepartments.DeleteList(oldDeps);
+
+                foreach (var depId in user.SelectedDepartmentIds.Distinct())
+                {
+                    await _unitOfWork.UserDepartments.AddAsync(new UserDepartment
+                    {
+                        UserId = existingUser.Id,
+                        DepartmentId = depId
+                    });
+                }
+
+                await _unitOfWork.CompleteAsync();
+
+                return User.IsInRole(Roles.Admin)
+                    ? RedirectToAction("Index", "User")
+                    : RedirectToAction("Index", "Home");
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -70,7 +70,7 @@ namespace WorkShop.Controllers
                 return NotFound();
             }
 
-            IEnumerable<User> users = department.users;
+            IEnumerable<User> users = _unitOfWork.UserDepartments.FindAll("users").Where(d => d.DepartmentId == department.Id).Select(ud => ud.User); ;
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
