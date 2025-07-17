@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using NuGet.Packaging.Signing;
 using WorkShop.Context;
 using WorkShop.Enums;
@@ -7,6 +9,7 @@ using WorkShop.Migrations;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
+using Microsoft.Extensions.Primitives;
 
 namespace WorkShop.Controllers
 {
@@ -158,8 +161,28 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete_Department(int? Id)
         {
+            try { 
             _unitOfWork.departments.Delete(Id);
             return RedirectToAction("Index");
+                                    }
+            catch (DbUpdateException dbEx)
+            {
+                // فحص إذا كان الخطأ بسبب ارتباط المستخدم ببيانات أخرى
+                if (dbEx.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+                {
+                    TempData["DeleteError"] = "The store cannot be deleted because it is associated with other data..";
+                }
+                else
+                {
+                    TempData["DeleteError"] = "An error occurred during the deletion process.";
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex){
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
+                return View("Index");
+            }                      
 
         }
     }
