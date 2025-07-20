@@ -5,6 +5,16 @@
     ViewData["Title"] = @Localizer["Register"];
     Layout = "_Layout";
 }
+@if (ViewBag.ErrorMessage != null)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            showErrorModal('@ViewBag.ErrorMessage');
+        });
+    </script>
+}
+
+
 
 <div class="container d-flex justify-content-center align-items-start mt-5" style="direction: rtl;">
     <div class="card shadow p-4" style="max-width: 600px; width: 100%;">
@@ -46,9 +56,11 @@
 
             <!-- القسم -->
             <div class="mb-3">
-                <label asp-for="SelectedDepartmentIds" class="form-label">@Localizer["Department"]</label>
-                <select asp-for="SelectedDepartmentIds" class="form-control" multiple asp-items="ViewBag.Departments">
-                    <option value="">-- @Localizer["SelectOne"] --</option>
+                <label asp-for="SelectedDepartmentIds" class="form-label">Department</label>
+                <select asp-for="SelectedDepartmentIds"
+                        asp-items="ViewBag.Departments"
+                        multiple
+                        class="form-control select2-dropdown">
                 </select>
                 <span asp-validation-for="SelectedDepartmentIds" class="text-danger"></span>
             </div>
@@ -88,6 +100,14 @@
             };
             reader.readAsDataURL(event.target.files[0]);
         };
+
+                        $(document).ready(function () {
+            $('.select2-dropdown').select2({
+                placeholder: "Select departments",
+                tags: true, // يضيف اختيارات كمربعات
+                width: '100%'
+            });
+        });
     </script>
 
 

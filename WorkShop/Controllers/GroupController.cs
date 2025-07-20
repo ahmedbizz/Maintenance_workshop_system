@@ -163,53 +163,53 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AssignRoles(int Id, AssignRolesToGroupViewModel model)
         {
-            var group = _unitOfWork.groups.FindAll("GroupRoles").
-                                SingleOrDefault(g => g.Id == Id);
-            if (group == null)
+            try
             {
-                return NotFound();
-            }
-            if (group.GroupRoles.Any())
-            {
-                // Remove existing roles
-                foreach (var groupRole in group.GroupRoles.ToList())
+                var group = _unitOfWork.groups.FindAll("GroupRoles").
+                                    SingleOrDefault(g => g.Id == Id);
+                if (group == null)
                 {
-                    _unitOfWork.groupRoles.Delete(groupRole);
+                    return NotFound();
                 }
-            }
-
-
-            var users = _unitOfWork.users.FindAll("UserGroups")
-                .Where(u => u.UserGroups.Any(ug => ug.GroupId == group.Id)).ToList();
-            // Assign new roles
-            foreach (var role in model.RoleNames)
-            {
-                if (!await _roleManager.RoleExistsAsync(role))
+                if (group.GroupRoles.Any())
                 {
-                    await _roleManager.CreateAsync(new IdentityRole(role));
+                    // Remove existing roles
+                    foreach (var groupRole in group.GroupRoles.ToList())
+                    {
+                        _unitOfWork.groupRoles.Delete(groupRole);
+                    }
                 }
-                var groupRole = new GroupRole { GroupId = Id, RoleId = (await _roleManager.FindByNameAsync(role)).Id };
-
-                _unitOfWork.groupRoles.Insert(groupRole);
 
 
+                var users = _unitOfWork.users.FindAll("UserGroups")
+                    .Where(u => u.UserGroups.Any(ug => ug.GroupId == group.Id)).ToList();
+                // Assign new roles
+                foreach (var role in model.RoleNames)
+                {
+                    if (!await _roleManager.RoleExistsAsync(role))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole(role));
+                    }
+                    var groupRole = new GroupRole { GroupId = Id, RoleId = (await _roleManager.FindByNameAsync(role)).Id };
+
+                    _unitOfWork.groupRoles.Insert(groupRole);
+
+
+                }
+
+                foreach (var user in users)
+                {
+                    await UpdateUserRolsFromGrooup(user);
+                }
+
+                await _unitOfWork.CompleteAsync();
+                return RedirectToAction("Index");
             }
-
-            foreach (var user in users)
+            catch (Exception ex)
             {
-              await  UpdateUserRolsFromGrooup(user);
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
+                return View("Index");
             }
-
-
-
-
-
-
-
-
-
-            await _unitOfWork.CompleteAsync();
-            return RedirectToAction("Index");
         }
 
         [HttpGet]
@@ -298,39 +298,46 @@ namespace WorkShop.Controllers
 
         private async Task UpdateUserRolsFromGrooup(User user)
         {
-            var grupIds = _unitOfWork.userGroups.FindAll()
-                .Where(g => g.UserId == user.Id)
-                .Select(g => g.GroupId)
-                .ToList();
-
-            var RolsfromGroup = _unitOfWork.groupRoles.FindAll("Role")
-                .Where(r => grupIds.Contains(r.GroupId))
-                .Select(r => r.Role.Name)
-                .Distinct()
-                .ToList();
-
-            var currentRols = await _userManager.GetRolesAsync(user);
-
-            var toRemove = currentRols.Except(RolsfromGroup).ToList();
-
-            if (toRemove.Any())
+            try
             {
-                foreach (var item in toRemove)
+                var grupIds = _unitOfWork.userGroups.FindAll()
+                    .Where(g => g.UserId == user.Id)
+                    .Select(g => g.GroupId)
+                    .ToList();
+
+                var RolsfromGroup = _unitOfWork.groupRoles.FindAll("Role")
+                    .Where(r => grupIds.Contains(r.GroupId))
+                    .Select(r => r.Role.Name)
+                    .Distinct()
+                    .ToList();
+
+                var currentRols = await _userManager.GetRolesAsync(user);
+
+                var toRemove = currentRols.Except(RolsfromGroup).ToList();
+
+                if (toRemove.Any())
                 {
-                    await _userManager.RemoveFromRoleAsync(user, item);
+                    foreach (var item in toRemove)
+                    {
+                        await _userManager.RemoveFromRoleAsync(user, item);
+                    }
+
                 }
-                
+
+                // To add Roles 
+                var toAdd = RolsfromGroup.Except(currentRols).ToList();
+                if (toAdd.Any())
+                {
+                    foreach (var item in toAdd)
+                    {
+                        await _userManager.AddToRoleAsync(user, item);
+                    }
+
+                }
             }
-
-            // To add Roles 
-            var toAdd = RolsfromGroup.Except(currentRols).ToList();
-            if (toAdd.Any())
+            catch (Exception ex)
             {
-                foreach (var item in toAdd)
-                {
-                    await _userManager.AddToRoleAsync(user, item);
-                }
-               
+                TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
             }
         }
 

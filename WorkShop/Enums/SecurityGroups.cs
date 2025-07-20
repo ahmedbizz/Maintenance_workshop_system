@@ -18,5 +18,6 @@
         public const string StoreKeeper = "StoreKeeper";
         public const string Soldier = "Soldier";
         public const string Technion = "Technion";
+        public const string DeviceReceiver = "DeviceReceiver";
     }
 }

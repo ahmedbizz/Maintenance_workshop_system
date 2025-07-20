@@ -62,7 +62,7 @@ namespace WorkShop.Controllers
             }
 
             int pageSize = 10;
-            var department = _unitOfWork.departments.FindAll("users").FirstOrDefault(d => d.Id == Id);
+            var department = _unitOfWork.departments.FindAll("UserDepartments").FirstOrDefault(d => d.UserDepartments.Any(ud => ud.DepartmentId == Id));
 
             if (department == null)
             {
@@ -70,7 +70,7 @@ namespace WorkShop.Controllers
                 return NotFound();
             }
 
-            IEnumerable<User> users = _unitOfWork.UserDepartments.FindAll("users").Where(d => d.DepartmentId == department.Id).Select(ud => ud.User); ;
+            IEnumerable<User> users = _unitOfWork.users.FindAll().Where(d => d.UserDepartments.Any(u => u.DepartmentId == department.Id));
 
             if (!string.IsNullOrEmpty(searchTerm))
             {

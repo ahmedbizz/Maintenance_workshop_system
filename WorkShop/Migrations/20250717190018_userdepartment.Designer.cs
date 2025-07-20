@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkShop.Context;
 
@@ -11,9 +12,11 @@ using WorkShop.Context;
 namespace WorkShop.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250717190018_userdepartment")]
+    partial class userdepartment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -71,6 +74,7 @@ namespace WorkShop.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TechnicianId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -794,7 +798,8 @@ namespace WorkShop.Migrations
                     b.HasOne("WorkShop.Models.User", "Technician")
                         .WithMany()
                         .HasForeignKey("TechnicianId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Department");
 

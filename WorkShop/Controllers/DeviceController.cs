@@ -11,9 +11,11 @@ using NuGet.Packaging.Signing;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using WorkShop.Enums;
 using WorkShop.Models;
+using WorkShop.Repository;
 using WorkShop.Repository.Base;
 using WorkShop.Services;
 using WorkShop.Services.MainService;
@@ -43,7 +45,7 @@ namespace WorkShop.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Index(string searchTerm , int page =1,string status = null, int? departmentId = null)
+        public async Task<IActionResult> Index(string searchTerm , int page =1,string status = null, int? departmentId = null )
         {
             var filters = new List<IDeviceFilter>
                 {
@@ -57,7 +59,7 @@ namespace WorkShop.Controllers
             IQueryable<Device>  query = string.IsNullOrEmpty(searchTerm) ?
                  _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable():
                  _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
-                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable(); ;
+                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable();
          
             foreach (var filter in filters)
             {
@@ -65,24 +67,31 @@ namespace WorkShop.Controllers
             }
             var devices = query.ToList();
             var totalDevices = devices.Count;
-             var pagedDevices = devices.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var pagedDevices = devices.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var technicians = _unitOfWork.users.FindAll("UserDepartments.Department")
+                    .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
+                    .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.FullName }).ToList();
+
+
 
             var viewModel = new DevicesViewModel
             {
                 devices = pagedDevices,
                 CurrentPage= page,
                 searchTerm = searchTerm,
-                TotalPages = (int)Math.Ceiling((double)totalDevices / pageSize)
+                TotalPages = (int)Math.Ceiling((double)totalDevices / pageSize),
+                Technicians = technicians
             };
     
             return View(viewModel);
         }
         [HttpGet]
         [Authorize(Roles = Roles.Engineer)]
-        public async Task<IActionResult> AddDevice()
+        public async Task<IActionResult> AddDevice(int? Id)
         {
-            var Tech_ALL= await _userManager.GetUsersInRoleAsync("Technion");
+            var Tech_ALL = await _userManager.GetUsersInRoleAsync(Roles.Technion);
             var user = await _userManager.GetUserAsync(User);
+
             if(user == null)
             {
                 return NotFound();
@@ -112,14 +121,59 @@ namespace WorkShop.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.Engineer)]
-        public async Task<IActionResult> AddDevice(AddDeviceViewModel model)
+        public async Task<IActionResult> AddDevice(AddDeviceViewModel model , int? DeviceId ,string? technionId)
         {
+            var Tech_ALL = await _userManager.GetUsersInRoleAsync(Roles.Technion);
             var user = await _userManager.GetUserAsync(User);
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+            var cardForAssgin = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == DeviceId);
+
+            if (cardForAssgin == null) return NotFound();
+
+            if (DeviceId != null && technionId != null)
+            {
+                model.Technicians = _unitOfWork.users.FindAll()
+                    .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
+                    .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.FullName });
+
+                var deviceForAssgin = _unitOfWork.devices.FindById(DeviceId);
+                if (deviceForAssgin != null)
+                {
+                    deviceForAssgin.TechnicianId = technionId;
+                    cardForAssgin.Status = MaintenanceStatus.AwaitingTechnician.ToString();
+                    cardForAssgin.EngineerId = user.Id;
+                    deviceForAssgin.Status = MaintenanceStatus.AwaitingTechnician.ToString();
+                    await _unitOfWork.CompleteAsync();
+                    var LogTaskAssgin = _logService.LogAsync(
+                                    deviceForAssgin.Id,
+                                    " Assign new Teckit",
+                                    "Add New Device & Create Maintenance Card",
+                                    MaintenanceStatus.AwaitingTechnician.ToString(),
+                                    "Note",
+                                    Roles.Technion,
+                                    user.Id);
+
+                                            // إرسال إشعار للفنين
+                  var NotifyTecnitionAssgin = _notificationService.NotifyUsersAsync(
+                                                   deviceForAssgin.TechnicianId,
+                                                   "Maintenance ticket Assgin",
+                                                   $"New device added  S/N: {deviceForAssgin.SerialNumber}",
+                                                   deviceForAssgin.Id
+                                                   );
+
+                             await Task.WhenAll(LogTaskAssgin, NotifyTecnitionAssgin);
+
+                             return RedirectToAction("Index");
+
+                }
+
+            }
+
             if(user == null)
             {
                 return NotFound();
             }
-            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+  
             if (userDepartmentIds == null)
             {
                 TempData["Error"] = "Access Denied";
@@ -327,9 +381,144 @@ namespace WorkShop.Controllers
 
         }//end
 
+        //============================ Recived Devices==========================
 
 
-  
+        [HttpGet]
+        public async Task<IActionResult> RecivedAdd()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            // جلب الأقسام التي ينتمي إليها المستخدم
+            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+
+            var departments = _unitOfWork.departments.FindAll();
+            var products = _unitOfWork.products.FindAll();
+            var engineers = _unitOfWork.users.FindAll();
+            var viewModel = new DeviceInputViewModel
+            {
+               
+                Departments = new SelectList(departments, "Id", "Name"),
+
+                ComingFromDepartments = new SelectList(departments, "Id", "Name"),
+
+                Products = new SelectList(products,"Id", "Name"),
+
+                Engineers = new SelectList(engineers, "Id", "FullName"),
+
+
+            };
+
+            return View(viewModel);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> RecivedAdd(DeviceInputViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            // إعادة تحميل القوائم قبل الإرجاع إلى الصفحة
+            
+            if (user == null)
+                return Unauthorized();
+
+
+            void PopulateDropDowns()
+            {
+                var departments = _unitOfWork.departments.FindAll();
+                model.Departments = new SelectList(departments, "Id", "Name");
+
+                model.ComingFromDepartments = new SelectList(departments, "Id", "Name");
+
+                var products = _unitOfWork.products.FindAll();
+
+                model.Products = new SelectList(products,"Id", "Name");
+                var engineers = _unitOfWork.users.FindAll();
+                model.Engineers = new SelectList(engineers, "Id", "FullName");
+           
+                   
+                  
+            }
+
+            if (!ModelState.IsValid)
+            {
+                PopulateDropDowns();
+                return View(model);
+            }
+
+            // تحقق من تكرار الجهاز بنفس الرقم التسلسلي داخل نفس القسم
+            var existingDevice = _unitOfWork.devices.FindAll()
+                .FirstOrDefault(d => d.SerialNumber == model.SerialNumber &&
+                d.DepartmentId == model.DepartmentId &&
+                !d.Status.Contains(MaintenanceStatus.Repaired.ToString()));
+            if (existingDevice != null)
+            {
+                ModelState.AddModelError("", "This device already have Tiket open ");
+                PopulateDropDowns();
+                return View(model);
+            }
+
+            // تحويل بيانات ViewModel إلى كائن Device
+            var device = new Device
+            {
+                SerialNumber = model.SerialNumber,
+                FromLocation = model.FromLocation,
+                FaultDate = model.FaultDate,
+                EngineerId = model.EngineerId,
+                ComingFromDepartmentId = model.ComingFromDepartmentId,
+                DepartmentId = model.DepartmentId,
+                ProductId = model.ProductId,
+                Status = model.Status,
+                CreatedAt = DateTime.Now,
+                FaultDescription = model.FaultDescription
+            };
+
+            await _unitOfWork.devices.AddAsync(device);
+            await _unitOfWork.CompleteAsync();
+
+            var card = new MaintenanceCard
+            {
+                DeviceId = device.Id,
+                CreatedAt = DateTime.Now,
+                Notes = "AssignedToEngineer",
+                AssignedToTechnicianAt = DateTime.Now,
+                Status = MaintenanceStatus.AssignedToEngineer.ToString()
+            };
+
+            await _unitOfWork.maintenanceCards.AddAsync(card);
+            await _unitOfWork.CompleteAsync();
+
+            var LogTask = _logService.LogAsync(
+            device.Id,
+            " Create new Teckit",
+            "Add New Device & Create Maintenance Card",
+            MaintenanceStatus.AssignedToEngineer.ToString(),
+            "Note",
+            Roles.Technion,
+            user.Id);
+
+            // إرسال إشعار للفنين
+            var NotifyEngineer = _notificationService.NotifyUsersAsync(
+                   device.EngineerId,
+                   "Maintenance ticket Open",
+                   $"New device added  S/N: {device.SerialNumber}",
+                   device.Id
+                   );
+
+            await Task.WhenAll(LogTask, NotifyEngineer);
+
+
+            TempData["Success"] = "Device successfully add";
+
+            return RedirectToAction("RecivedAdd");
+        }
+
+
+
+        
+
     }//end Main method 
 
 

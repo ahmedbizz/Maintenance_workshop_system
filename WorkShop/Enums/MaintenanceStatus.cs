@@ -14,6 +14,7 @@
             NeedsParts,
             UnderDiagnosis,
             UnderRepair,
+        Received, AssignedToEngineer, InRepair,
             Repaired,
         Delivered,
             Closed

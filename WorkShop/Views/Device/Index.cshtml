@@ -57,7 +57,7 @@
         @foreach (var device in Model.devices)
         {
             var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
-            <tr style="cursor:pointer" onclick="location.href='@Url.Action("DeviceDetails", "Device", new { id = device.Id })'">
+            <tr style="cursor:pointer">
                 <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow" /></td>
                 <td>@device.Product?.Name</td>
                 <td>@device.SerialNumber</td>
@@ -68,7 +68,18 @@
                         @status.ToString()
                     </span>
                 </td>
-  
+                @if (User.IsInRole("Engineer"))
+                {
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#assignModal"
+                                data-device-id="@device.Id">
+                            تحويل للفني
+                        </button>
+                    </td>
+                }
+
             </tr>
         }
     </tbody>
@@ -173,6 +184,36 @@
 </div>
 
 
+<!-- Modal لتحويل الجهاز إلى فني -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-action="AddDevice" asp-controller="Device">
+                <div class="modal-header">
+                    <h5 class="modal-title">تحويل الجهاز إلى فني</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="DeviceId" id="modalDeviceId" />
+                    <div class="mb-3">
+                        <label for="technicianSelect" class="form-label">اختر الفني:</label>
+                        <select class="form-select" name="technionId" id="technicianSelect" required>
+                            <option value="">-- اختر الفني --</option>
+                            @foreach (var tech in Model.Technicians)
+                            {
+                                <option value="@tech.Value">@tech.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">تحويل</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 
 
@@ -204,6 +245,14 @@
                 modal.show();
             }
         });
+
+
+                $('#assignModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var deviceId = button.data('device-id');
+            $('#modalDeviceId').val(deviceId);
+        });
+
     </script>
 }
 

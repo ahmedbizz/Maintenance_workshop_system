@@ -1,0 +1,113 @@
+﻿@model WorkShop.ViewModel.DeviceInputViewModel
+
+@{
+    ViewData["Title"] = "تسجيل جهاز جديد";
+}
+
+<h2>@ViewData["Title"]</h2>
+@using System.Text.Json
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<form asp-action="RecivedAdd"  asp-controller="Device" method="post">
+    <div class="form-group mb-3">
+        <label asp-for="SerialNumber" class="form-label"></label>
+        <input asp-for="SerialNumber" class="form-control" />
+        <span asp-validation-for="SerialNumber" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="FromLocation" class="form-label"></label>
+        <input asp-for="FromLocation" class="form-control" />
+        <span asp-validation-for="FromLocation" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="FaultDate" class="form-label"></label>
+        <input asp-for="FaultDate" type="date" class="form-control" />
+        <span asp-validation-for="FaultDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="ProductId" class="form-label"></label>
+        <select asp-for="ProductId" asp-items="Model.Products" class="form-select">
+            <option value="">-- اختر الجهاز --</option>
+        </select>
+        <span asp-validation-for="ProductId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="ComingFromDepartmentId" class="form-label"></label>
+        <select asp-for="ComingFromDepartmentId" asp-items="Model.ComingFromDepartments" class="form-select">
+            <option value="">-- اختر القسم القادم منه --</option>
+        </select>
+        <span asp-validation-for="ComingFromDepartmentId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="DepartmentId" class="form-label"></label>
+        <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+            <option value="">-- اختر القسم المختص --</option>
+        </select>
+        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="EngineerId" class="form-label"></label>
+        <select asp-for="EngineerId" asp-items="Model.Engineers" class="form-select">
+            <option value="">-- Select Engineer   --</option>
+        </select>
+        <span asp-validation-for="EngineerId" class="text-danger"></span>
+    </div>
+
+   
+    <div class="form-group mb-3">
+        <label asp-for="FaultDescription" class="form-label"></label>
+        <textarea asp-for="FaultDescription" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="FaultDescription" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">تسجيل الجهاز</button>
+
+    <div asp-validation-summary="All"></div>
+</form>
+
+
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+        <script>
+                        $(document).ready(function() {
+            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+
+            let message = success || error;
+            if (message && message.trim() !== "")
+            {
+                $('#modalMessage').text(message);
+                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+                modal.show();
+            }
+        });
+        </script>
+    }
+        
+}

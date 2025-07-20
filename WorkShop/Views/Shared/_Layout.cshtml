@@ -80,6 +80,7 @@
                                 <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">Groups</a></li>
                                 <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">Roles</a></li>
                                 <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">Manage Roles</a></li>
+                                <li><a class="dropdown-item" asp-controller="Device" asp-action="RecivedAdd">Recived Add</a></li>
                             </ul>
                         </li>
                     }
@@ -197,17 +198,26 @@
 </nav>
     </header>
 
-    <div class="container">
+    <div class="container mb-3">
         <main role="main" class="pb-3">
+           
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted mt-auto">
+    <footer class="border-top footer text-muted mt-3">
         <div class="container text-center py-3">
             &copy; 2025 - WorkShop - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+    <script>
+    function showErrorModal(message) {
+        const errorBody = document.getElementById('errorModalBody');
+        errorBody.textContent = message;
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errorModal.show();
+    }
+</script>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

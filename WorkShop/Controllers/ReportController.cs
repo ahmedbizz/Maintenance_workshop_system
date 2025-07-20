@@ -142,7 +142,7 @@ namespace WorkShop.Controllers
 
 
             // مثال على الاتصال بقاعدة البيانات
-            var connectionString = "server=DESKTOP-E8AEC1J\\WORKSHOP;user Id=sa;password=P@ssw0rd;database=Workshop;TrustServerCertificate=True";
+            var connectionString = "server=DESKTOP-CFP7USR\\WORKSHOP;user Id=sa;password=P@ssw0rd;database=Workshop;TrustServerCertificate=True";
 
             using var sqlConnection = new SqlConnection(connectionString);
             sqlConnection.Open();

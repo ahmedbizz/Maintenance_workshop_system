@@ -54,55 +54,80 @@ namespace WorkShop.Controllers
         //================================Register=============================
         [HttpGet]
         public IActionResult Register() {
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
-            return View(); }
+            try
+            {
+                ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+                return View();
+            }
+
+
+
+            catch (Exception ex)
+            {
+                // لا تعيد التوجيه لنفس Register، بل أعرض View يحتوي على المودال
+                ViewBag.ErrorMessage = ex.Message;
+                ViewBag.Departments = new SelectList(new List<Department>(), "Id", "Name"); // حتى لا يحصل null exception في الـ View
+                return View();
+            }
+        }
 
         [HttpPost]
 
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-
-         
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
-            if (!ModelState.IsValid) {
-                return View(model);
-            }
-
-            var user = new User
+            try
             {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName,
-                PhoneNumber = model.PhoneNumber,
-                birthDay = model.birthDay,
-                UserDepartments = model.SelectedDepartmentIds.Select(id => new UserDepartment
-                {
-                    DepartmentId = id
-                }).ToList(),
-                CreateAt = DateTime.Now,
-                UpdateAt = DateTime.Now
-            };
-         
-            string filename = string.Empty;
-            if (model.Image != null && model.Image.Length >0){
 
-                    string Upload = Path.Combine(_environment.WebRootPath, "images");
-                if (!Directory.Exists(Upload)) { Directory.CreateDirectory(Upload); }
-                string unigName = Guid.NewGuid().ToString() + Path.GetExtension(model.Image.FileName);
-                string FullPath = Path.Combine(Upload, unigName);
-                await  model.Image.CopyToAsync(new FileStream(FullPath, FileMode.Create));
-                user.imagePath = unigName;
+                ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
                 }
 
-            var result = await _userManager.CreateAsync(user,model.Password);
-            Console.WriteLine($"USER CREATED: {user.Email}, PASSWORD: {model.Password}");
-            if (result.Succeeded) { return RedirectToAction("Login"); }
+                var user = new User
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FullName = model.FullName,
+                    PhoneNumber = model.PhoneNumber,
+                    birthDay = model.birthDay,
+                    UserDepartments = model.SelectedDepartmentIds.Select(id => new UserDepartment
+                    {
+                        DepartmentId = id
+                    }).ToList(),
+                    CreateAt = DateTime.Now,
+                    UpdateAt = DateTime.Now
+                };
 
-            foreach (var err in result.Errors)
-            {
-                ModelState.AddModelError("", err.Description);
+                string filename = string.Empty;
+                if (model.Image != null && model.Image.Length > 0)
+                {
+
+                    string Upload = Path.Combine(_environment.WebRootPath, "images");
+                    if (!Directory.Exists(Upload)) { Directory.CreateDirectory(Upload); }
+                    string unigName = Guid.NewGuid().ToString() + Path.GetExtension(model.Image.FileName);
+                    string FullPath = Path.Combine(Upload, unigName);
+                    await model.Image.CopyToAsync(new FileStream(FullPath, FileMode.Create));
+                   user.imagePath = unigName;
+                }
+
+                var result = await _userManager.CreateAsync(user, model.Password);
+                Console.WriteLine($"USER CREATED: {user.Email}, PASSWORD: {model.Password}");
+                if (result.Succeeded) { return RedirectToAction("Login"); }
+
+                foreach (var err in result.Errors)
+                {
+                    ModelState.AddModelError("", err.Description);
+                }
+                return View(model);
             }
-            return View(model);
+            catch (Exception ex)
+            {
+                // لا تعيد التوجيه لنفس Register، بل أعرض View يحتوي على المودال
+                ViewBag.ErrorMessage = ex.Message;
+                ViewBag.Departments = new SelectList(new List<Department>(), "Id", "Name"); // حتى لا يحصل null exception في الـ View
+                return View();
+            }
         }
 
 
