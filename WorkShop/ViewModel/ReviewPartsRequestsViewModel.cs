@@ -1,4 +1,5 @@
-﻿using WorkShop.Models;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using WorkShop.Models;
 
 namespace WorkShop.ViewModel
 {
@@ -8,6 +9,7 @@ namespace WorkShop.ViewModel
         public string SearchTerm { get; set; } = string.Empty;
         public int CurrentPage { get; set; } = 1;
         public int TotalPages { get; set; } = 1;
+
 
     }
 }

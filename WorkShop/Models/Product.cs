@@ -18,9 +18,9 @@ namespace WorkShop.Models
         [NotMapped]
         public IFormFile clientFile { get; set; }
 
-        public DateTime CreateAt { get; set; }
+        public DateTime CreateAt { get; set; } = DateTime.Now;
 
-        public DateTime UpdateAt { get; set; }
+        public DateTime UpdateAt { get; set; } = DateTime.Now;
 
         [Required(ErrorMessage = "Please select a department.")]
         public int DepartmentId { get; set; }

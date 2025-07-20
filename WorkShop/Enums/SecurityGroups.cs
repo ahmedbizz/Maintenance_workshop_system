@@ -7,7 +7,8 @@
         Admin,
         StoreKeeper,
         Soldier,
-        Technion
+        Technion,
+        DeviceReceiver
     }
 
     public static class Roles

@@ -80,7 +80,7 @@
                                 <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">Groups</a></li>
                                 <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">Roles</a></li>
                                 <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">Manage Roles</a></li>
-                                <li><a class="dropdown-item" asp-controller="Device" asp-action="RecivedAdd">Recived Add</a></li>
+                               
                             </ul>
                         </li>
                     }
@@ -99,6 +99,11 @@
                     @if (User.IsInRole(Roles.Technion))
                     {
                         <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="TechnicionDevices">My Devices</a></li>
+                    }
+
+                   @if (User.IsInRole(Roles.DeviceReceiver))
+                    {
+                      <li><a class="dropdown-item" asp-controller="Device" asp-action="RecivedAdd">Create Tiket </a></li>
                     }
 
                     @if (User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
