@@ -62,9 +62,10 @@ namespace WorkShop.Controllers
                             .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             IQueryable<Device>  query = string.IsNullOrEmpty(searchTerm) ?
-                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable():
-                 _unitOfWork.devices.SearchBycondition(d => d.SerialNumber.Contains(searchTerm)||
-                 d.Product.Name.Contains(searchTerm) , "Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).AsQueryable();
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId)).OrderByDescending(d => d.CreatedAt).AsQueryable():
+                 _unitOfWork.devices.FindAll("Product", "Department", "Technician").Where(d => userDepartmentIds.Contains(d.DepartmentId))
+                 .Where(d => d.SerialNumber.Contains(searchTerm)||
+                 d.Product.Name.Contains(searchTerm)).AsQueryable();
          
             foreach (var filter in filters)
             {
@@ -131,6 +132,7 @@ namespace WorkShop.Controllers
                 return RedirectToAction("Index");
             }
 
+     
             // جلب الأعطال السابقة من RepairReport
             var errorSuggestions = _unitOfWork.repairReports.FindAll()
                 .GroupBy(r => r.ErrorKeyword)
@@ -165,8 +167,11 @@ namespace WorkShop.Controllers
         public async Task<IActionResult> AddDevice(AddDeviceViewModel model)
         {
             var Tech_ALL = await _userManager.GetUsersInRoleAsync(Roles.Technion);
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+           
 
 
 
@@ -180,20 +185,39 @@ namespace WorkShop.Controllers
                 TempData["Error"] = "Access Denied";
                 return RedirectToAction("Index");
             }
+            var users  =await _userManager.GetUsersInRoleAsync(Roles.Technion);
+            var technicians = users;
 
             void PopulateDropDowns()
             {
+
+                // جلب الأعطال السابقة من RepairReport
+                var errorSuggestions = _unitOfWork.repairReports.FindAll()
+                    .GroupBy(r => r.ErrorKeyword)
+                    .Select(g => g.Key) // فقط الكلمات المفتاحية
+                    .Distinct()
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .Select(e => new SelectListItem
+                    {
+                        Value = e,
+                        Text = e
+                    })
+                    .ToList();
                 model.Departments = _unitOfWork.departments.FindAll()
                     .Where(d => userDepartmentIds.Contains(d.Id))
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name });
+                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }).ToList();
 
                 model.Products = _unitOfWork.products.FindAll()
                     .Where(p => userDepartmentIds.Contains(p.DepartmentId))
-                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name });
+                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList();
 
-                model.Technicians = _unitOfWork.users.FindAll()
-                    .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
-                    .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.FullName });
+                model.Technicians = technicians.Select(t => new SelectListItem
+                {
+                    Value = t.Id,
+                    Text = t.FullName // أو أي خاصية لعرض اسم الفني
+                }).ToList();
+
+                model.ErrorSuggestions = errorSuggestions;
             }
             if (!ModelState.IsValid)
             {
@@ -202,7 +226,7 @@ namespace WorkShop.Controllers
          
             }
             // تحقق من الانتماء للقسم
-            if (userDepartmentIds.Contains(model.DepartmentId))
+            if (!userDepartmentIds.Contains(model.DepartmentId))
             {
                 ModelState.AddModelError("", "Access Denied");
                 PopulateDropDowns();
@@ -234,7 +258,8 @@ namespace WorkShop.Controllers
                     EngineerId = user.Id,
                     CreatedAt = DateTime.Now,
                     Status = "New",
-                    FaultDescription = model.FaultDescription
+                    FaultDescription = model.FaultDescription,
+                    SelectedErrorKeyword = model.SelectedErrorKeyword
                 };
                 await _unitOfWork.devices.AddAsync(device);
                 await _unitOfWork.CompleteAsync();
@@ -351,10 +376,16 @@ namespace WorkShop.Controllers
                 // استخراج الاقتراحات من RepairReports
                 var productId = device?.ProductId;
                 var suggestions = _unitOfWork.repairReports
-                           .FindAll("Device")
-                           .Where(r => r.Device.ProductId == productId && !string.IsNullOrWhiteSpace(r.SuggestedFix))
-                           .Select(r => r.SuggestedFix)
-                           .ToList();
+                    .FindAll("Device")
+                    .Where(r =>
+                        r.Device.ProductId == productId &&
+                        !string.IsNullOrWhiteSpace(device?.SelectedErrorKeyword) &&
+                        !string.IsNullOrWhiteSpace(r.ErrorKeyword) &&
+                        r.ErrorKeyword.Contains(device.SelectedErrorKeyword) &&
+                        !string.IsNullOrWhiteSpace(r.SuggestedFix)
+                    )
+                    .Select(r => r.SuggestedFix)
+                    .ToList();
 
                 var viewModel = new DeviceDetailsViewModel
                 {

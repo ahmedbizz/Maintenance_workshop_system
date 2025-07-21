@@ -158,6 +158,10 @@ namespace WorkShop.Controllers
 
                 await Task.WhenAll(LogTask, NotifyEngineer);
 
+
+
+                await _unitOfWork.CompleteAsync();
+
             }
 
 
@@ -167,26 +171,35 @@ namespace WorkShop.Controllers
                 var existingRequest = _unitOfWork.sparePartRequests
                     .FindAll("Items")
                     .FirstOrDefault(r => r.DeviceId == model.DeviceId && r.Status != MaintenanceStatus.Delivered.ToString());
-
-                if (existingRequest != null && existingRequest.Items.Any())
+                if (existingRequest != null && existingRequest.Status != MaintenanceStatus.Delivered.ToString())
                 {
-                    TempData["Massege"] = "كرت الصيانة يحتوي على قطع غيار مضافة ";
-                    return RedirectToAction("DeviceDetails", new { id = model.DeviceId });
+                    TempData["Massege"] = "You have requested spare parts that haven't been delivered yet. Cannot complete repair without parts.";
+                    return RedirectToAction("DeviceDetails", "Device", new { id = model.DeviceId });
                 }
+
 
                 device.Status = MaintenanceStatus.Repaired.ToString();
                 card.ClosedAt = DateTime.Now;
                 card.Status = MaintenanceStatus.Closed.ToString();
                 card.ClosedAt = DateTime.Now;
+                var usedPartsNames = selectedItems
+                    .Select(i =>
+                    {
+                        var product = _unitOfWork.products.FindById(i.ProductId);
+                        return product != null ? $"{product.Name} × {i.Quantity}" : $"ProductID: {i.ProductId} × {i.Quantity}";
+                    });
+
+                var usedPartsString = usedPartsNames.Any() ? string.Join(", ", usedPartsNames) : "No need";
+
 
                 var RepairReport = new RepairReport
                 {
-                    DeviceId = model.DeviceId,
-                    ProductId = model.ProductId,
-                    ErrorKeyword = model.ErrorKeyword,
+                    DeviceId = device.Id,
+                    ProductId = device.ProductId,
+                    ErrorKeyword = model.ErrorKeyword ?? device.SelectedErrorKeyword ?? "Not Specified",
                     ErrorDescription = model.TechnicianReport,
-                    SuggestedFix = model.SuggestedFix,
-                    UsedParts = "No need",
+                    SuggestedFix = string.IsNullOrWhiteSpace(model.SuggestedFix) ? "Not Provided" : model.SuggestedFix,
+                    UsedParts = usedPartsString,
                     TechnicianName = user.FullName,
                     RepairedAt = DateTime.Now,
                     IsSuccessful = true

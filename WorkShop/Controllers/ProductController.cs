@@ -31,7 +31,9 @@ namespace WorkShop.Controllers
         private readonly UserManager<User> _userManager;
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
+            var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Product> query;
@@ -46,7 +48,7 @@ namespace WorkShop.Controllers
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
                         _unitOfWork.products.FindAll("department").Where(p =>userDepartmentIds.Contains(p.DepartmentId)).ToList() :
-                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").Where(p => userDepartmentIds.Contains(p.DepartmentId)).ToList();
+                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
               
 
 

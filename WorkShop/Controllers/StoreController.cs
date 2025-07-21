@@ -32,7 +32,9 @@ namespace WorkShop.Controllers
        
         public  async Task<IActionResult> Index(string? searchTerm , int page =1)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
+            var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<Store> query;
@@ -99,7 +101,9 @@ namespace WorkShop.Controllers
         [HttpGet]
         [Authorize(Roles = Roles.Engineer +","+Roles.Admin)]
         public async Task <IActionResult> Create(int? Id) {
-            var curentUser = await _userManager.GetUserAsync(User);
+            var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User)); ;
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser,Roles.Admin);
             List<Department> departments;

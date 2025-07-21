@@ -19,111 +19,130 @@
     };
 }
 
-<div class="d-flex align-items-center justify-content-between">
-    <h2 class="mb-4">Devices</h2>
 
-    <div class="col-6 text-center align-items-center">
 
-        <form class="d-flex">
-            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm">
-            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-        </form>
-    </div>
-          @if (User.IsInRole("Engineer"))
+
+
+
+<div class="container my-4">
+
+          
+                <div class="card-header  text-primary text-center ">
+        <h3 class="mb-0"><i class="bi bi-tools"></i> Maintenance devices</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+                        <h3 class="text-primary fw-bold fs-5 text-uppercase mb-0">Devices</h3>
+
+                        <form class="d-flex gap-2" method="get">
+                            <input class="form-control" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm" />
+                            <button class="btn btn-secondary" type="submit">Search</button>
+                        </form>
+
+                        @if (User.IsInRole("Engineer"))
+                        {
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary btnImportExcel" data-bs-toggle="modal" data-bs-target="#ImportExcel">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+                                </button>
+                                <a asp-action="AddDevice" asp-controller="Device" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Create
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+
+                    <div class="table-responsive">
+                        <table class="table shadow table-hover align-middle text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Device</th>
+                                    <th>S/N</th>
+                                    <th>Department</th>
+                                    <th>Technician</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var device in Model.devices)
+                                {
+                                    var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
+                                    <tr>
+                                        <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow rounded-circle" /></td>
+                                        <td>@device.Product?.Name</td>
+                                        <td>@device.SerialNumber</td>
+                                        <td>@device.Department?.Name</td>
+                                        <td>@device.Technician?.FullName</td>
+                                        <td>
+                                            <span class="badge bg-@GetStatusColor(status) px-3 py-2 rounded-pill">
+                                                @status.ToString()
+                                            </span>
+                                        </td>
+                                        <td >
+                                            <a asp-action="DeviceDetails" class="btn btn-sm btn-warning" asp-controller="Device" asp-route-Id="@device.Id">
+                                    <i class="bi bi-gear"></i>   Maintenance
+                                            </a>
+                                            @if (User.IsInRole("Engineer") && device.Status == MaintenanceStatus.New.ToString())
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#assignModal"
+                                                        data-device-id="@device.Id">
+                                                    Assign
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @{
+                        int maxPagesToShow = 5;
+                        int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
+                        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+
+                        // تعديل البداية إذا اقتربنا من النهاية
+                        if (endPage - startPage < maxPagesToShow - 1)
+                        {
+                            startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+                        }
+                    }
+
+                    <nav>
+                        <ul class="pagination justify-content-center">
+
+                            <!-- زر السابق -->
+                            <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+
+                            @for (int i = startPage; i <= endPage; i++)
                             {
-        <button type="button"
-                class="btn btn-light btnImportExcel"
-                data-bs-toggle="modal"
-                data-bs-target="#ImportExcel">
-            <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
-        </button>
-        <a asp-action="AddDevice" asp-controller="Device" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
                             }
+
+                            <!-- زر التالي -->
+                            <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+          
+
 </div>
 
-<table class="table tab-content shadow m-4 p-2 table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>#</th>
-            <th>Device </th>
-            <th>S/N </th>
-            <th>Department</th>
-            <th> Assign To Technician</th>
-            <th>Status</th>
-            <th>Action</th>
-
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var device in Model.devices)
-        {
-            var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
-            <tr style="cursor:pointer">
-                <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow" /></td>
-                <td>@device.Product?.Name</td>
-                <td>@device.SerialNumber</td>
-                <td>@device.Department?.Name</td>
-                <td>@device.Technician?.FullName</td>
-                <td>
-                    <span class="badge bg-@GetStatusColor(status) p-2">
-                        @status.ToString()
-                    </span>
-                </td>
-
-                @if (User.IsInRole("Engineer"))
-                {
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#assignModal"
-                                data-device-id="@device.Id">
-                            Assign
-                        </button>
-                    </td>
-                }
-
-            </tr>
-        }
-    </tbody>
-</table>
-@{
-    int maxPagesToShow = 5;
-    int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
-    int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
-
-    // تعديل البداية إذا اقتربنا من النهاية
-    if (endPage - startPage < maxPagesToShow - 1)
-    {
-        startPage = Math.Max(1, endPage - maxPagesToShow + 1);
-    }
-}
-
-<nav>
-    <ul class="pagination justify-content-center">
-
-        <!-- زر السابق -->
-        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-            <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-
-        @for (int i = startPage; i <= endPage; i++)
-        {
-            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
-            </li>
-        }
-
-        <!-- زر التالي -->
-        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-            <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-    </ul>
-</nav>
-</div>
 @* //Import From Excel *@
 <div class="modal fade" id="ImportExcel">
     <div class="modal-dialog modal-dialog-centered">
@@ -220,7 +239,6 @@
 
 
 
-
 @section Scripts {
     <script>
 
@@ -256,6 +274,16 @@
         });
 
     </script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+        }
+    </style>
+
 }
 
 

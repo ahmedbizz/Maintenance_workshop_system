@@ -35,9 +35,10 @@
                     <td>@engs.FirstOrDefault(eng => eng.Id == device.MaintenanceCard?.EngineerId).FullName</td>
                     <td>@device.MaintenanceCard?.TechnicianReport</td>
                     <td>
-                        <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
-                            <button class="btn btn-success btn-sm">Approve</button>
-                        </form>
+     
+                           <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
+                                <button class="btn btn-success btn-sm">Aprrove</button>
+                            </form>
                         <form method="post" asp-action="RejectByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
                             <button class="btn btn-danger btn-sm">Reject</button>
                         </form>

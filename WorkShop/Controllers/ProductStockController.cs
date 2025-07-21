@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
@@ -22,7 +23,9 @@ namespace WorkShop.Controllers
         private readonly UserManager<User> _userManager;
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
+            var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
             List<ProductStock> query;
@@ -30,14 +33,15 @@ namespace WorkShop.Controllers
             if (isAdmin)
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
-                 _unitOfWork.productStoks.FindAll("product", "store").ToList() :
-                _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").ToList();
+                         _unitOfWork.productStoks.FindAll("product", "store").ToList() :
+                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store").ToList();
             }
             else
             {
                 query = string.IsNullOrEmpty(searchTerm) ?
                         _unitOfWork.productStoks.FindAll("product", "store").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList() :
-                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "department").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList();
+                        _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store")
+                        .ToList();
 
 
 
@@ -66,7 +70,9 @@ namespace WorkShop.Controllers
         [Authorize(Roles =  Roles.StoreKeeper + "," + Roles.Admin)]
         public async Task<IActionResult> Create(int? proId, int? storeId)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
+            var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 

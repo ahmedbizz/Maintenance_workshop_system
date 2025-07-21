@@ -48,15 +48,19 @@
             </select>
             <span asp-validation-for="TechnicianId" class="text-danger"></span>
         </div>
-        <div class="form-group">
-            <label for="SelectedErrorKeyword">أختر نوع العطل (اختياري)</label>
-            @Html.DropDownListFor(model => model.SelectedErrorKeyword, Model.ErrorSuggestions, "-- اختر من الأعطال السابقة --", new { @class = "form-control", @id = "errorDropdown" })
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="SelectedErrorKeyword" class="form-label">أختر نوع العطل (اختياري)</label>
+            <select asp-for="SelectedErrorKeyword" asp-items="Model.ErrorSuggestions" class="form-select" id="errorDropdown">
+                <option value="">-- اختر من الأعطال السابقة --</option>
+            </select>
         </div>
 
-        <div class="form-group">
-            <label for="TechnicianReport">تفاصيل العطل</label>
-            @Html.TextAreaFor(model => model.SuggestedFix, new { @class = "form-control", @id = "suggestedFix" })
+        <div class="col-md-12 mb-3">
+            <label asp-for="SuggestedFix" class="form-label">تفاصيل العطل</label>
+            <textarea asp-for="SuggestedFix" class="form-control" id="suggestedFix"></textarea>
         </div>
+
 
 
     </div>

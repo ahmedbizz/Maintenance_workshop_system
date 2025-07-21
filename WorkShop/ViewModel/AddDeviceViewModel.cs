@@ -25,10 +25,10 @@ namespace WorkShop.ViewModel
         public IEnumerable<SelectListItem>? Technicians { get; set; }
 
         // جديد: قائمة الأعطال السابقة
-        public IEnumerable<SelectListItem> ErrorSuggestions { get; set; }
+        public IEnumerable<SelectListItem>? ErrorSuggestions { get; set; }
 
         // جديد: لو أردت تعبئة الحقول لاحقًا
-        public string SelectedErrorKeyword { get; set; }
-        public string SuggestedFix { get; set; }
+        public string? SelectedErrorKeyword { get; set; }
+        public string? SuggestedFix { get; set; }
     }
 }

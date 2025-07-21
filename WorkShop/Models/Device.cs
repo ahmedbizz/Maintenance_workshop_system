@@ -20,7 +20,7 @@ public class Device
     [Required]
     public string EngineerId { get; set; }
     public User? Engineer { get; set; }
-
+    public string? SelectedErrorKeyword { get; set; }
 
     [Required]
     public int ComingFromDepartmentId { get; set; }
@@ -43,6 +43,6 @@ public class Device
     // سجل الأحداث
     public ICollection<DeviceLogs> DeviceLogs { get; set; }
     public ICollection<SparePartRequest> SparePartRequests { get; set; }
-    public virtual ICollection<RepairReport> RepairReports { get; set; }
+    public virtual ICollection<RepairReport>? RepairReports { get; set; }
 
 }
