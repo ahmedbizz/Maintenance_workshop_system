@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkShop.Context;
 
@@ -11,9 +12,11 @@ using WorkShop.Context;
 namespace WorkShop.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250720173643_AddFixSuggestionsTable")]
+    partial class AddFixSuggestionsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -573,47 +576,6 @@ namespace WorkShop.Migrations
                     b.ToTable("ProductStock");
                 });
 
-            modelBuilder.Entity("WorkShop.Models.RepairReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DeviceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ErrorDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ErrorKeyword")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsSuccessful")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("RepairedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SuggestedFix")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TechnicianName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UsedParts")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId");
-
-                    b.ToTable("RepairReports");
-                });
-
             modelBuilder.Entity("WorkShop.Models.SparePartItem", b =>
                 {
                     b.Property<int>("Id")
@@ -1067,17 +1029,6 @@ namespace WorkShop.Migrations
                     b.Navigation("product");
 
                     b.Navigation("store");
-                });
-
-            modelBuilder.Entity("WorkShop.Models.RepairReport", b =>
-                {
-                    b.HasOne("Device", "Device")
-                        .WithMany()
-                        .HasForeignKey("DeviceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Device");
                 });
 
             modelBuilder.Entity("WorkShop.Models.SparePartItem", b =>

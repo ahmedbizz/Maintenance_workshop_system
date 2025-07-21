@@ -25,6 +25,9 @@ namespace WorkShop.Context
         public DbSet<UserGroup> userGroups { get; set; }
         public DbSet<GroupRole> groupRoles { get; set; }
         public DbSet<UserDepartment> UserDepartments { get; set; }
+        public DbSet<FixSuggestion> FixSuggestions { get; set; }
+        public DbSet<RepairReport> RepairReports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

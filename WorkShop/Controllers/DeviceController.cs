@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
@@ -31,14 +32,16 @@ namespace WorkShop.Controllers
     public class DeviceController : Controller
     {
 
-        public DeviceController(IUnitOfWork unitOfWork,UserManager<User> userManager, INotificationService notificationService,ILogService logService)
+        public DeviceController(IUnitOfWork unitOfWork,UserManager<User> userManager, INotificationService notificationService,ILogService logService, RoleManager<IdentityRole> roleManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _notificationService = notificationService;
             _logService = logService;
+            _roleManager = roleManager;
         }
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogService _logService;
         private readonly INotificationService _notificationService;
@@ -101,20 +104,45 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> AddDevice(int? Id)
         {
-            var Tech_ALL = await _userManager.GetUsersInRoleAsync(Roles.Technion);
-            var user = await _userManager.GetUserAsync(User);
+            var users = await _userManager.GetUsersInRoleAsync(Roles.Technion);
 
-            if(user == null)
+
+
+
+            // جلب المستخدم الحالي
+            var currentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+
+            if (currentUser == null)
             {
-                return NotFound();
+                TempData["Error"] = "User not found.";
+                return RedirectToAction("Index");
             }
-            var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+
+            var userDepartmentIds = currentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+
+            var technicians = users.ToList();
+
 
             if (userDepartmentIds == null)
             {
                 TempData["Error"] = "Access Denied.";
                 return RedirectToAction("Index");
             }
+
+            // جلب الأعطال السابقة من RepairReport
+            var errorSuggestions = _unitOfWork.repairReports.FindAll()
+                .GroupBy(r => r.ErrorKeyword)
+                .Select(g => g.Key) // فقط الكلمات المفتاحية
+                .Distinct()
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Select(e => new SelectListItem
+                {
+                    Value = e,
+                    Text = e
+                })
+                .ToList();
             var viewModel = new AddDeviceViewModel
             {
                 Products = _unitOfWork.products.FindAll()
@@ -123,9 +151,10 @@ namespace WorkShop.Controllers
                 Departments = _unitOfWork.departments.FindAll()
                 .Where(d => userDepartmentIds.Contains(d.Id))
                 .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }),
-                Technicians = Tech_ALL
-                .Where(t => t.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId)))
-                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.FullName })
+                Technicians = technicians
+                
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.FullName }),
+                ErrorSuggestions = errorSuggestions
             };
             return View(viewModel);
         }
@@ -202,8 +231,10 @@ namespace WorkShop.Controllers
                     FaultDate = model.FaultDate,
                     TechnicianId = model.TechnicianId,
                     DepartmentId = model.DepartmentId,
+                    EngineerId = user.Id,
                     CreatedAt = DateTime.Now,
-                    Status = "New"
+                    Status = "New",
+                    FaultDescription = model.FaultDescription
                 };
                 await _unitOfWork.devices.AddAsync(device);
                 await _unitOfWork.CompleteAsync();
@@ -269,29 +300,31 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer + "," + Roles.Officer + "," + Roles.Technion)]
         public async Task<IActionResult> DeviceDetails(int? Id)
         {
-            try { 
-            var currentUser = await _userManager.GetUserAsync(User);
-            var isEngineer = await _userManager.IsInRoleAsync(currentUser, "Engineer");
+            try
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                var isEngineer = await _userManager.IsInRoleAsync(currentUser, "Engineer");
+
                 var userDepartmentIds = _unitOfWork.UserDepartments
                    .FindAll()
                    .Where(ud => ud.UserId == currentUser.Id)
                    .Select(ud => ud.DepartmentId)
                    .ToList();
 
-
-                var query = _unitOfWork.devices
-                    .FindAll(
+                // جلب الأجهزة مع العلاقات المطلوبة + RepairReports
+                var query = _unitOfWork.devices.FindAll(
                         "Product",
                         "Department",
                         "Technician",
                         "MaintenanceCard",
                         "SparePartRequests",
                         "SparePartRequests.Items",
-                        "SparePartRequests.Items.Product");
+                        "SparePartRequests.Items.Product",
+                        "RepairReports" // أضف هذا هنا فقط
+                    );
 
+                if (query == null) return NotFound();
 
-                if (query == null) { return NotFound(); }
-                
                 Device device;
                 if (isEngineer)
                 {
@@ -306,15 +339,23 @@ namespace WorkShop.Controllers
                         d.TechnicianId == currentUser.Id && d.Id == Id);
                 }
 
-                if (device == null)
-                    if (device == null) return NotFound();
+                if (device == null) return NotFound();
 
                 var spareRequest = device.SparePartRequests.SelectMany(r => r.Items).ToList();
+
                 var availableStores = _unitOfWork.stores.FindAll()
-                                    .Where(s =>userDepartmentIds.Contains(s.DepartmentId))
-                                    .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
-                                    .ToList();
-        
+                                        .Where(s => userDepartmentIds.Contains(s.DepartmentId))
+                                        .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
+                                        .ToList();
+
+                // استخراج الاقتراحات من RepairReports
+                var productId = device?.ProductId;
+                var suggestions = _unitOfWork.repairReports
+                           .FindAll("Device")
+                           .Where(r => r.Device.ProductId == productId && !string.IsNullOrWhiteSpace(r.SuggestedFix))
+                           .Select(r => r.SuggestedFix)
+                           .ToList();
+
                 var viewModel = new DeviceDetailsViewModel
                 {
                     DeviceId = device.Id,
@@ -322,53 +363,46 @@ namespace WorkShop.Controllers
                     SerialNumber = device.SerialNumber,
                     DepartmentName = device.Department?.Name,
                     FaultDate = device.FaultDate,
-                    TechnicianReport = string.IsNullOrWhiteSpace(device.MaintenanceCard?.TechnicianReport) ? "" : device.MaintenanceCard?.TechnicianReport,
+                    TechnicianReport = device.MaintenanceCard?.TechnicianReport ?? "",
                     DeviceStatus = device.MaintenanceCard?.Status ?? "Null",
+                    Suggestions = suggestions, // أضف هذا الحقل إلى ViewModel
                     SparePartRequest = new SparePartRequestViewModel
                     {
                         DeviceId = device.Id,
                         DeviceSerialNumber = device.SerialNumber,
-                        IsFinalized = device.SparePartRequests
-                    .OrderByDescending(r => r.Id)
-                    .FirstOrDefault()?.IsFinalized ?? false,
-                        Status = device.SparePartRequests
-                    .OrderByDescending(r => r.Id)
-                    .FirstOrDefault()?.Status ?? "",
+                        IsFinalized = device.SparePartRequests.OrderByDescending(r => r.Id).FirstOrDefault()?.IsFinalized ?? false,
+                        Status = device.SparePartRequests.OrderByDescending(r => r.Id).FirstOrDefault()?.Status ?? "",
                         Items = spareRequest.Any()
-                                ? spareRequest.Select(i => new SparePartItemViewModel
-                                {
-                                    Id = i.Id,
-                                    ProductId = i.ProductId,
-                                    Quantity = i.Quantity,
-                                    StoreId = i.StoreId,
-                                    AvailableStores = availableStores
-                                }).ToList()
-                                : new List<SparePartItemViewModel>
-                                {
-                                    new SparePartItemViewModel
-                                    {
-                                        AvailableStores = availableStores
-                                    }
-                                }
-
+                            ? spareRequest.Select(i => new SparePartItemViewModel
+                            {
+                                Id = i.Id,
+                                ProductId = i.ProductId,
+                                Quantity = i.Quantity,
+                                StoreId = i.StoreId,
+                                AvailableStores = availableStores
+                            }).ToList()
+                            : new List<SparePartItemViewModel>
+                            {
+                        new SparePartItemViewModel
+                        {
+                            AvailableStores = availableStores
+                        }
+                            }
                     },
                     Products = _unitOfWork.products.FindAll()
-                            .Where(p => userDepartmentIds.Contains(p.DepartmentId))
-                            .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
-                            .ToList()
+                                .Where(p => userDepartmentIds.Contains(p.DepartmentId))
+                                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
+                                .ToList()
                 };
 
-            await _unitOfWork.CompleteAsync();
-
-
-            return View(viewModel);
+                return View(viewModel);
             }
-            catch(Exception ex) {
-
-                return Content($"Erorr: {ex.Message}");
+            catch (Exception ex)
+            {
+                return Content($"Error: {ex.Message}");
             }
+        }
 
-        }//end
 
         //============================ Recived Devices==========================
 

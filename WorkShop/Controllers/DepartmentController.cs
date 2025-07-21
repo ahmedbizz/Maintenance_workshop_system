@@ -63,6 +63,9 @@ namespace WorkShop.Controllers
 
             int pageSize = 10;
             var department = _unitOfWork.departments.FindAll("UserDepartments").FirstOrDefault(d => d.UserDepartments.Any(ud => ud.DepartmentId == Id));
+            var usersQuery = _unitOfWork.users
+                            .FindAll("UserDepartments")
+                            .Where(u => u.UserDepartments.Any(ud => ud.DepartmentId == department.Id));
 
             if (department == null)
             {
@@ -74,13 +77,12 @@ namespace WorkShop.Controllers
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                users = users.Where(u => u.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
-                                      || u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+                usersQuery = usersQuery.Where(u => u.FullName.Contains(searchTerm) || u.Email.Contains(searchTerm));
             }
 
-            int totalUsers = users.Count();
+            int totalUsers = usersQuery.Count();
 
-            var pagedUsers = users
+            var pagedUsers = usersQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();

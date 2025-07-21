@@ -43,4 +43,6 @@ public class Device
     // سجل الأحداث
     public ICollection<DeviceLogs> DeviceLogs { get; set; }
     public ICollection<SparePartRequest> SparePartRequests { get; set; }
+    public virtual ICollection<RepairReport> RepairReports { get; set; }
+
 }

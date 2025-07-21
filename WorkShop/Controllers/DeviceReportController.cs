@@ -178,6 +178,20 @@ namespace WorkShop.Controllers
                 card.ClosedAt = DateTime.Now;
                 card.Status = MaintenanceStatus.Closed.ToString();
                 card.ClosedAt = DateTime.Now;
+
+                var RepairReport = new RepairReport
+                {
+                    DeviceId = model.DeviceId,
+                    ProductId = model.ProductId,
+                    ErrorKeyword = model.ErrorKeyword,
+                    ErrorDescription = model.TechnicianReport,
+                    SuggestedFix = model.SuggestedFix,
+                    UsedParts = "No need",
+                    TechnicianName = user.FullName,
+                    RepairedAt = DateTime.Now,
+                    IsSuccessful = true
+                };
+                await _unitOfWork.repairReports.AddAsync(RepairReport);
                 await _unitOfWork.CompleteAsync();
                 // سجل الحدث
                 var LogTask = _logService.LogAsync(
@@ -203,6 +217,8 @@ namespace WorkShop.Controllers
                         $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
                          model.DeviceId
                       );
+
+
 
                 await Task.WhenAll(LogTask, NotifiyEngineer, NotifyOfficer);
 

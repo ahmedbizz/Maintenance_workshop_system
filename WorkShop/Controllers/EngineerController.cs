@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository.Base;
@@ -31,7 +32,9 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> ReviewPartsRequests(string searchTerm, int page = 1)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.Users
+                            .Include(u => u.UserDepartments)
+                            .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var pageSize = 10;
             var query = string.IsNullOrEmpty(searchTerm) ?

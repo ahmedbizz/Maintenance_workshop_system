@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TextTemplating;
 using WorkShop.Enums;
 using WorkShop.Models;
@@ -29,7 +30,9 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Officer)]
         public async Task<IActionResult> ReviewPartsRequestsByOfficer()
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.Users
+                            .Include(u => u.UserDepartments)
+                            .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
             var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
             var devices = _unitOfWork.devices.FindAll("Product", "Department", "Technician", "MaintenanceCard")
                 .Where(d => userDepartmentIds.Contains(d.DepartmentId) && d.MaintenanceCard.Status == "ApprovedByEngineer").ToList();

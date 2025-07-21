@@ -25,6 +25,9 @@ namespace WorkShop.Repository
             userGroups = new MainRepository<UserGroup>(_Context);
             groupRoles = new MainRepository<GroupRole>(_Context);
             UserDepartments = new MainRepository<UserDepartment>(_Context);
+
+            fixSuggestions = new MainRepository<FixSuggestion>(_Context);
+            repairReports = new MainRepository<RepairReport>(_Context);
         }
         private readonly AppDbContext _Context;
         public IRepository<User> users { get; set; }
@@ -56,6 +59,10 @@ namespace WorkShop.Repository
         public IRepository<GroupRole> groupRoles { get; private set; }
 
         public IRepository<UserDepartment> UserDepartments { get; private set; }
+
+        public IRepository<FixSuggestion> fixSuggestions { get; private set; }
+
+        public IRepository<RepairReport> repairReports { get; private set; }
 
         public int CommitChanges()
         {

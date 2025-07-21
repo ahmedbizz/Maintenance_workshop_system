@@ -56,7 +56,21 @@
         <dt class="col-sm-2">Report:</dt>
         <dd class="col-sm-10">@Model.TechnicianReport</dd>
     </dl>
-   
+    <h4>اقتراحات الصيانة:</h4>
+    @if (Model.Suggestions  != null && Model.Suggestions.Any())
+    {
+        <ul>
+            @foreach (var suggestion in Model.Suggestions)
+            {
+                <li>@suggestion</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>لا توجد اقتراحات.</p>
+    }
+
     @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed))
     {
         <form asp-action="SubmitReport" asp-controller="DeviceReport" method="post">
@@ -88,6 +102,17 @@
                     <label asp-for="RequestSpareParts" class="form-check-label">Request Spare Parts</label>
                 </div>
             }
+            <div id="RepairReportsection" class="mt-3" style="display: none;">
+                <div class="form-group">
+                    <label for="ErrorKeyword">الكلمات الدلالية للمشكلة</label>
+                    <input type="text" class="form-control" id="ErrorKeyword" name="ErrorKeyword" />
+                </div>
+
+                <div class="form-group">
+                    <label for="SuggestedFix">الاقتراح لحل المشكلة</label>
+                    <textarea class="form-control" id="SuggestedFix" name="SuggestedFix"></textarea>
+                </div>
+            </div>
 
             <div id="sparePartsSection" class="mt-3">
                 <h5 class="text-secondary">Requested Spare Parts</h5>
@@ -226,6 +251,26 @@
                 toggleSpareParts(toggle.checked);
                 toggle.addEventListener("change", function () {
                     toggleSpareParts(this.checked);
+                });
+            }
+        });
+
+                document.addEventListener("DOMContentLoaded", function () {
+            const repairedToggle = document.getElementById("CheckRepaired");
+            const repairSection = document.getElementById("RepairReportsection");
+
+            function toggleRepairSection(state) {
+                if (repairSection) {
+                    repairSection.style.display = state ? "block" : "none";
+                    const inputs = repairSection.querySelectorAll("input, textarea");
+                    inputs.forEach(input => input.disabled = !state);
+                }
+            }
+
+            if (repairedToggle) {
+                toggleRepairSection(repairedToggle.checked);
+                repairedToggle.addEventListener("change", function () {
+                    toggleRepairSection(this.checked);
                 });
             }
         });

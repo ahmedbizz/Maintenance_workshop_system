@@ -23,6 +23,8 @@ namespace WorkShop.Repository.Base
         IRepository<UserGroup> userGroups { get; }
         IRepository<GroupRole> groupRoles { get; }
 
+        IRepository<FixSuggestion> fixSuggestions { get; }
+        IRepository<RepairReport> repairReports { get; }
         int CommitChanges();
 
         Task CompleteAsync();

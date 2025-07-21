@@ -14,7 +14,10 @@ namespace WorkShop.ViewModel
         public bool RequestSpareParts { get; set; }
         public bool IsRepaired { get; set; }
         public string DeviceStatus { get; set; } = "";
-
+        public string? ErrorKeyword { get; set; }
+        public string? SuggestedFix { get; set; }
+        public int ProductId { get; set; }
+        public List<string> Suggestions { get; set; }
         public ICollection<SparePartRequest> SparePartRequests { get; set; } 
         public SparePartRequestViewModel SparePartRequest { get; set; } = new();
         public List<SelectListItem> Products { get; set; } = new();
