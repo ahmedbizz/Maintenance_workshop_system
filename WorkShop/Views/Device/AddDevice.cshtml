@@ -1,76 +1,76 @@
 ﻿@model WorkShop.ViewModel.AddDeviceViewModel
 
 @{
-    ViewData["Title"] = " Create Ticket ";
+    ViewData["Title"] = "Create Ticket";
 }
 
-<h2 class="text-center mb-4">Create Ticket Maintenance</h2>
+<div class="container mt-4">
+    <h2 class="text-center text-primary mb-4"><i class="bi bi-tools me-2"></i>Create Maintenance Ticket</h2>
 
-<form asp-action="AddDevice" method="post">
+    <form asp-action="AddDevice" method="post" class="card shadow p-4 rounded-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Department</label>
+                <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select"></select>
+                <input type="hidden" asp-for="DepartmentId" />
+                <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+            </div>
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Department </label>
-            <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select" ></select>
-            <input type="hidden" asp-for="DepartmentId" />
-            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+            <div class="col-md-6">
+                <label asp-for="productId" class="form-label fw-semibold">Device</label>
+                <select asp-for="productId" asp-items="Model.Products" class="form-select">
+                    <option value="">Select device</option>
+                </select>
+                <span asp-validation-for="productId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="SerialNumber" class="form-label fw-semibold">Serial Number</label>
+                <input asp-for="SerialNumber" class="form-control" />
+                <span asp-validation-for="SerialNumber" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="FromLocation" class="form-label fw-semibold">From Location</label>
+                <input asp-for="FromLocation" class="form-control" />
+                <span asp-validation-for="FromLocation" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="FaultDate" class="form-label fw-semibold">Date of Issue</label>
+                <input asp-for="FaultDate" class="form-control" type="date" />
+                <span asp-validation-for="FaultDate" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="TechnicianId" class="form-label fw-semibold">Assign Technician</label>
+                <select asp-for="TechnicianId" asp-items="Model.Technicians" class="form-select">
+                    <option value="">Select technician</option>
+                </select>
+                <span asp-validation-for="TechnicianId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-12">
+                <label asp-for="SelectedErrorKeyword" class="form-label fw-semibold">Error Type (Optional)</label>
+                <select asp-for="SelectedErrorKeyword" asp-items="Model.ErrorSuggestions" class="form-select" id="errorDropdown">
+                    <option value="">-- Select from previous errors --</option>
+                </select>
+            </div>
+
+            <div class="col-md-12">
+                <label asp-for="SuggestedFix" class="form-label fw-semibold">Error Details</label>
+                <textarea asp-for="SuggestedFix" class="form-control" rows="4" id="suggestedFix"></textarea>
+            </div>
         </div>
-        <div class="col-md-6 mb-3">
-            <label asp-for="productId" class="form-label">Device</label>
-            <select asp-for="productId" asp-items="Model.Products" class="form-select">
-                <option value="">select device</option>
-            </select>
-            <span asp-validation-for="productId" class="text-danger"></span>
+
+        <div class="mt-4">
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <button type="submit" class="btn btn-success me-2"><i class="bi bi-check-circle"></i> Create</button>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i> Cancel</a>
         </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="SerialNumber" class="form-label">S/N </label>
-            <input asp-for="SerialNumber" class="form-control" />
-            <span asp-validation-for="SerialNumber" class="text-danger"></span>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="FromLocation" class="form-label">From</label>
-            <input asp-for="FromLocation" class="form-control" />
-            <span asp-validation-for="FromLocation" class="text-danger"></span>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="FaultDate" class="form-label"> Date issues</label>
-            <input asp-for="FaultDate" class="form-control" type="date" />
-            <span asp-validation-for="FaultDate" class="text-danger"></span>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="TechnicianId" class="form-label">Technicians</label>
-            <select asp-for="TechnicianId" asp-items="Model.Technicians" class="form-select">
-                <option value="">select technician</option>
-            </select>
-            <span asp-validation-for="TechnicianId" class="text-danger"></span>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="SelectedErrorKeyword" class="form-label">أختر نوع العطل (اختياري)</label>
-            <select asp-for="SelectedErrorKeyword" asp-items="Model.ErrorSuggestions" class="form-select" id="errorDropdown">
-                <option value="">-- اختر من الأعطال السابقة --</option>
-            </select>
-        </div>
-
-        <div class="col-md-12 mb-3">
-            <label asp-for="SuggestedFix" class="form-label">تفاصيل العطل</label>
-            <textarea asp-for="SuggestedFix" class="form-control" id="suggestedFix"></textarea>
-        </div>
-
-
-
-    </div>
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <button type="submit" class="btn btn-success">Create</button>
-    <a asp-action="Index" class="btn btn-secondary">Cansel</a>
-</form>
-
+    </form>
+</div>
 
 @section Scripts {
-
-    <partial name="_ValidationScriptsPartial"/>
+    <partial name="_ValidationScriptsPartial" />
 }

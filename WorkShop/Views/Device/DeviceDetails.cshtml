@@ -28,36 +28,41 @@
         </div>
     }
 
-    <h2 class="text-primary text-start">Device Details</h2>
+    <h2 class="text-primary">Device Details</h2>
     <hr />
 
+    <dl class="row">
+        <dt class="col-sm-2">Device:</dt>
+        <dd class="col-sm-4">@Model.ProductName</dd>
 
-    <dl class="row text-start">
-        <dt class="col-sm-1">Device:</dt>
-        <dd class="col-sm-3">@Model.ProductName</dd>
-        <dt class="col-sm-1">Status:</dt>
+        <dt class="col-sm-2">Status:</dt>
         <dd class="col-sm-4">
-            <span class="badge bg-@GetStatusColor(status) p-2">
-                @status.ToString()
-            </span>
+            <span class="badge bg-@GetStatusColor(status) p-2">@status</span>
         </dd>
-    
-        <dd class="col-sm-3">
+
+        <dt class="col-sm-2">Serial Number:</dt>
+        <dd class="col-sm-4">@Model.SerialNumber</dd>
+
+        <dt class="col-sm-2">Department:</dt>
+        <dd class="col-sm-4">@Model.DepartmentName</dd>
+
+        <dt class="col-sm-2">Fault Date:</dt>
+        <dd class="col-sm-4">@Model.FaultDate</dd>
+
+        <dt class="col-sm-2">Report:</dt>
+        <dd class="col-sm-10">@Model.TechnicianReport</dd>
+
+        <dd class="col-sm-12 mt-2">
             <a asp-action="DeviceHistory" asp-controller="Report" asp-route-SN="@Model.SerialNumber" class="btn btn-outline-info">
                 View Maintenance History
             </a>
         </dd>
-        <dt class="col-sm-1">S/N :</dt>
-        <dd class="col-sm-3">@Model.SerialNumber</dd>
-        <dt class="col-sm-1">Department:</dt>
-        <dd class="col-sm-6">@Model.DepartmentName</dd>
-        <dt class="col-sm-4">Date issues :</dt>
-        <dd class="col-sm-7">@Model.FaultDate.ToString("yyyy-MM-dd")</dd>
-        <dt class="col-sm-2">Report:</dt>
-        <dd class="col-sm-10">@Model.TechnicianReport</dd>
     </dl>
-    <h4> Suggestions Repaire :</h4>
-    @if (Model.Suggestions  != null && Model.Suggestions.Any())
+
+    <hr />
+
+    <h4>Suggestions for Repair</h4>
+    @if (Model.Suggestions?.Any() == true)
     {
         <ul>
             @foreach (var suggestion in Model.Suggestions)
@@ -68,7 +73,7 @@
     }
     else
     {
-        <p>  No Suggestions Repaire.</p>
+        <p>No suggestions available.</p>
     }
 
     @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed))
@@ -79,54 +84,51 @@
             <input type="hidden" asp-for="SerialNumber" />
 
             <div class="mb-3">
-                <label asp-for="TechnicianReport" class="form-label">Issues </label>
-                <textarea asp-for="TechnicianReport" class="form-control"></textarea>
+                <label asp-for="TechnicianReport" class="form-label">Issue Description</label>
+                <textarea asp-for="TechnicianReport" class="form-control" rows="3"></textarea>
             </div>
 
-            @if (status is not (MaintenanceStatus.NeedsParts))
+            @if (status is not MaintenanceStatus.NeedsParts)
             {
-             
-                    <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-start gap-2" dir="rtl">
-                        <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
-                        <label asp-for="IsRepaired" class="form-check-label" for="CheckRepaired">Repaired </label>
-                    </div>
-             
+                <div class="form-check form-switch">
+                    <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
+                    <label class="form-check-label" for="CheckRepaired">Mark as Repaired</label>
+                </div>
             }
-      
 
             @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
             {
-                <div class="form-check form-switch d-flex flex-row-reverse align-items-center justify-content-start gap-2 mt-2" dir="rtl">
-                    <input asp-for="RequestSpareParts" class="form-check-input" type="checkbox" id="toggleSpareParts" />
-                    <label asp-for="RequestSpareParts" class="form-check-label">Request Spare Parts</label>
+                <div class="form-check form-switch mt-2">
+                    <input asp-for="RequestSpareParts" class="form-check-input" id="toggleSpareParts" />
+                    <label class="form-check-label" for="toggleSpareParts">Request Spare Parts</label>
                 </div>
             }
-            <div id="RepairReportsection" class="mt-3" style="display: none;">
-                <div class="form-group">
-                    <label for="ErrorKeyword">Error Keyword</label>
-                    <input type="text" class="form-control" id="ErrorKeyword" name="ErrorKeyword" />
-                </div>
 
-                <div class="form-group">
-                    <label for="SuggestedFix">How You Fixed ?</label>
-                    <textarea class="form-control" id="SuggestedFix" name="SuggestedFix"></textarea>
+            <div id="RepairReportsection" class="mt-3" style="display:none;">
+                <div class="mb-3">
+                    <label for="ErrorKeyword" class="form-label">Error Keyword</label>
+                    <input type="text" name="ErrorKeyword" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="SuggestedFix" class="form-label">How Was It Fixed?</label>
+                    <textarea name="SuggestedFix" class="form-control" rows="3"></textarea>
                 </div>
             </div>
 
-            <div id="sparePartsSection" class="mt-3">
-                <h5 class="text-secondary">Requested Spare Parts</h5>
+            <div id="sparePartsSection" class="mt-4">
+                <h5>Requested Spare Parts</h5>
 
-                @if (Model.SparePartRequest.Items.Any())
+                @if (Model.SparePartRequest.Items?.Any() == true)
                 {
                     <table class="table" id="partsTable">
                         <thead class="table-dark">
                             <tr>
-                                <th>Part name</th>
+                                <th>Part</th>
                                 <th>Warehouse</th>
                                 <th>Quantity</th>
-                                @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
+                                @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
                                 {
-                                    <th>Delete</th>
+                                    <th>Action</th>
                                 }
                             </tr>
                         </thead>
@@ -134,70 +136,85 @@
                             @for (int i = 0; i < Model.SparePartRequest.Items.Count; i++)
                             {
                                 var item = Model.SparePartRequest.Items[i];
-                                if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer && status != MaintenanceStatus.ApprovedByOfficer)
-                                {
-                                    <tr>
-                                        <td>
+                                <tr>
+                                    <td>
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        {
                                             <select name="SparePartRequest.Items[@i].ProductId" class="form-select">
                                                 @foreach (var product in Model.Products)
                                                 {
                                                     <option value="@product.Value" selected="@(product.Value == item.ProductId.ToString())">@product.Text</option>
                                                 }
                                             </select>
-                                        </td>
-                                        <td>
+                                        }
+                                        else
+                                        {
+                                            @Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        {
                                             <select name="SparePartRequest.Items[@i].StoreId" class="form-select">
                                                 @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
                                                 {
                                                     <option value="@store.Value" selected="@(store.Value == item.StoreId?.ToString())">@store.Text</option>
                                                 }
                                             </select>
-                                        </td>
+                                        }
+                                        else
+                                        {
+                                            @item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        {
+                                            <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" value="@item.Quantity" min="1" />
+                                        }
+                                        else
+                                        {
+                                            @item.Quantity
+                                        }
+                                    </td>
+                                    @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                    {
                                         <td>
-                                            <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" min="1" value="@(item.Quantity == 0 ? 1 : item.Quantity)" />
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
                                         </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)"><i class="bi bi-trash3"></i></button>
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td>@Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text</td>
-                                        <td>@item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text</td>
-                                        <td>@(item.Quantity == 0 ? "" : item.Quantity)</td>
-                                    </tr>
-                                }
+                                    }
+                                </tr>
                             }
                         </tbody>
                     </table>
                 }
                 else if (!Model.RequestSpareParts)
                 {
-                    <div class="alert alert-warning text-center">No spare parts requested.</div>
+                    <div class="alert alert-info">No spare parts requested.</div>
                 }
 
-                <button type="button" class="btn btn-secondary" id="sparePartsAdd" style="display:@(Model.RequestSpareParts ? "block" : "none")" onclick="addRow()">
+                <button type="button" class="btn btn-outline-secondary" id="sparePartsAdd" style="display:@(Model.RequestSpareParts ? "block" : "none")" onclick="addRow()">
                     <i class="bi bi-plus-circle"></i> Add Part
                 </button>
             </div>
 
-            @if (status != MaintenanceStatus.NeedsParts && status != MaintenanceStatus.ApprovedByEngineer)
-            {
-                <button type="submit" class="btn btn-success mt-3"><i class="bi bi-floppy"></i> Save</button>
-            }
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-save"></i> Save Report
+                </button>
+            </div>
         </form>
     }
     else
     {
-        <h5 class="text-secondary">Parts Requested</h5>
-        @if (Model.SparePartRequest.Items.Any())
-        {
-            <table class="table" id="partsTable">
+        <div class="mt-4">
+            <h5>Parts Requested</h5>
+            <table class="table">
                 <thead class="table-dark">
                     <tr>
-                        <th>Part name</th>
+                        <th>Part</th>
                         <th>Warehouse</th>
                         <th>Quantity</th>
                     </tr>
@@ -208,14 +225,13 @@
                         <tr>
                             <td>@Model.Products.FirstOrDefault(p => p.Value == item.ProductId.ToString())?.Text</td>
                             <td>@item.AvailableStores?.FirstOrDefault(s => s.Value == item.StoreId?.ToString())?.Text</td>
-                            <td>@(item.Quantity == 0 ? "" : item.Quantity)</td>
+                            <td>@item.Quantity</td>
                         </tr>
                     }
                 </tbody>
             </table>
-        }
-
-        <div class="mt-4 text-center"><p class="text-danger">Can't edit this report.</p></div>
+            <p class="text-danger text-center">Editing this report is not allowed.</p>
+        </div>
     }
 
     <form id="deleteForm" asp-controller="SpareParts" asp-action="DeleteItemPart" method="post" class="d-none">
@@ -239,38 +255,27 @@
             const addButton = document.getElementById("sparePartsAdd");
 
             function toggleSpareParts(state) {
-                if (section) section.style.display = state ? "block" : "none";
-                if (addButton) addButton.style.display = state ? "block" : "none";
-
-                const inputs = section.querySelectorAll("input, select");
-                inputs.forEach(input => input.disabled = !state);
+                section.style.display = state ? "block" : "none";
+                addButton.style.display = state ? "block" : "none";
+                section.querySelectorAll("input, select").forEach(el => el.disabled = !state);
             }
 
             if (toggle) {
                 toggleSpareParts(toggle.checked);
-                toggle.addEventListener("change", function () {
-                    toggleSpareParts(this.checked);
-                });
+                toggle.addEventListener("change", () => toggleSpareParts(toggle.checked));
             }
-        });
 
-                document.addEventListener("DOMContentLoaded", function () {
             const repairedToggle = document.getElementById("CheckRepaired");
             const repairSection = document.getElementById("RepairReportsection");
 
             function toggleRepairSection(state) {
-                if (repairSection) {
-                    repairSection.style.display = state ? "block" : "none";
-                    const inputs = repairSection.querySelectorAll("input, textarea");
-                    inputs.forEach(input => input.disabled = !state);
-                }
+                repairSection.style.display = state ? "block" : "none";
+                repairSection.querySelectorAll("input, textarea").forEach(el => el.disabled = !state);
             }
 
             if (repairedToggle) {
                 toggleRepairSection(repairedToggle.checked);
-                repairedToggle.addEventListener("change", function () {
-                    toggleRepairSection(this.checked);
-                });
+                repairedToggle.addEventListener("change", () => toggleRepairSection(repairedToggle.checked));
             }
         });
 
@@ -296,13 +301,13 @@
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="SparePartRequest.Items[${partIndex}].Quantity" class="form-control" min="1" value="1" />
+                        <input type="number" name="SparePartRequest.Items[${partIndex}].Quantity" class="form-control" value="1" min="1" />
                     </td>
                     <td>
                         <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">🗑️</button>
                     </td>
                 </tr>`;
-            document.querySelector('#partsTable tbody').insertAdjacentHTML('beforeend', row);
+            document.querySelector("#partsTable tbody").insertAdjacentHTML("beforeend", row);
             partIndex++;
         }
     </script>

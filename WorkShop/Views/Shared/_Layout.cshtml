@@ -58,149 +58,206 @@
 </head>
 <body>
     <header>
-<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm mb-3">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold text-dark" asp-controller="Home" asp-action="Index">WorkShop</a>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-4">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index"><i class="bi bi-tools"></i></a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-        <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-3">
-                @if (User.Identity.IsAuthenticated)
-                {
-                    @if (User.IsInRole(Roles.Admin))
-                    {
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle fw-semibold text-dark" data-bs-toggle="dropdown" href="#">Management</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Department" asp-action="Index">Departments</a></li>
-                                <li><a class="dropdown-item" asp-controller="User" asp-action="Index">Users</a></li>
-                                <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">Groups</a></li>
-                                <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">Roles</a></li>
-                                <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">Manage Roles</a></li>
-                               
-                            </ul>
-                        </li>
-                    }
-
-                    @if (User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Admin))
-                    {
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="AddDevice">Maintenance Ticket</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Engineer" asp-action="ReviewPartsRequests">Spare Parts Requests</a></li>
-                    }
-
-                    @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
-                    {
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="Index">Devices</a></li>
-                    }
-
-                    @if (User.IsInRole(Roles.Technion))
-                    {
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="TechnicionDevices">My Devices</a></li>
-                    }
-
-                   @if (User.IsInRole(Roles.DeviceReceiver))
-                    {
-                      <li><a class="dropdown-item" asp-controller="Device" asp-action="RecivedAdd">Create Tiket </a></li>
-                    }
-
-                    @if (User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
-                    {
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Officer" asp-action="ReviewPartsRequestsByOfficer">Parts Requests</a></li>
-                    }
-
-                    @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Admin))
-                    {
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Store" asp-action="PendingDeliveries">Pending</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Store" asp-action="Index">Warehouse</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Product" asp-action="Index">Products</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="ProductStock" asp-action="Index">Stocks</a></li>
-                    }
-                }
-            </ul>
-
-            <ul class="navbar-nav align-items-center gap-3">
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <!-- Notifications -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link position-relative text-dark" href="#" data-bs-toggle="dropdown">
-                            <i class="bi bi-bell fs-5"></i>
-                            @if (unreadCount > 0)
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @* Admin *@
+                            @if (User.IsInRole(Roles.Admin))
                             {
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    @unreadCount
-                                </span>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle fw-semibold text-dark" data-bs-toggle="dropdown" href="#">Management</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-controller="Department" asp-action="Index">Departments</a></li>
+                                        <li><a class="dropdown-item" asp-controller="User" asp-action="Index">Users</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Group" asp-action="Index">Groups</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListRole">Roles</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Role" asp-action="ListUsers">Manage Roles</a></li>
+                                    </ul>
+                                </li>
                             }
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 320px;">
-                            @if (notifications.Any())
+
+                            @* Engineer *@
+                            @if (User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Admin))
                             {
-                                @foreach (var n in notifications)
-                                {
-                                    string url = "#";
-                                    if (n.DeviceId > 0)
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="AddDevice"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Maintenance Ticket</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Engineer" asp-action="ReviewPartsRequests"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Spare Parts Requests</a>
+                                </li>
+                            }
+
+                            @* Devices access *@
+                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="Index"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Devices</a>
+                                </li>
+                            }
+
+                            @* My Devices - تعديل خاص *@
+                            @if (User.IsInRole(Roles.Technion))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark"
+                                       asp-controller="Device"
+                                       asp-action="TechnicionDevices"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">
+                                        My Devices
+                                    </a>
+                                </li>
+                            }
+
+                            @* Device Receiver *@
+                            @if (User.IsInRole(Roles.DeviceReceiver))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-underline"
+                                       asp-controller="Device"
+                                       asp-action="RecivedAdd"
+                                       style="text-decoration:none; transition: color 0.3s, transform 0.3s;"
+                                       onmouseover="this.style.color='#0d6efd'; this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.color=''; this.style.transform='scale(1)';">
+                                        Create Ticket
+                                    </a>
+                                </li>
+                            }
+
+                            @* Officer *@
+                            @if (User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Officer" asp-action="ReviewPartsRequestsByOfficer"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Parts Requests</a>
+                                </li>
+                            }
+
+                            @* Store Keeper *@
+                            @if (User.IsInRole(Roles.StoreKeeper) || User.IsInRole(Roles.Admin))
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Store" asp-action="PendingDeliveries"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Pending</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Store" asp-action="Index"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Warehouse</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Product" asp-action="Index"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Products</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="ProductStock" asp-action="Index"
+                                       style="text-decoration:none; transition: transform 0.3s;"
+                                       onmouseover="this.style.transform='scale(1.05)';"
+                                       onmouseout="this.style.transform='scale(1)';">Stocks</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center gap-3">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @* Notifications *@
+                            <li class="nav-item dropdown">
+                                <a class="nav-link position-relative text-dark" href="#" data-bs-toggle="dropdown">
+                                    <i class="bi bi-bell fs-5"></i>
+                                    @if (unreadCount > 0)
                                     {
-                                        url = User.IsInRole(Roles.Officer)
-                                            ? Url.Action("ReviewPartsRequestsByOfficer", "Officer")
-                                            : User.IsInRole(Roles.Engineer)
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            @unreadCount
+                                        </span>
+                                    }
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
+                                    @if (notifications.Any())
+                                    {
+                                        @foreach (var n in notifications)
+                                        {
+                                            string url = "#";
+                                            if (n.DeviceId > 0)
+                                            {
+                                                url = User.IsInRole(Roles.Officer)
+                                                ? Url.Action("ReviewPartsRequestsByOfficer", "Officer")
+                                                : User.IsInRole(Roles.Engineer)
                                                 ? Url.Action("ReviewPartsRequests", "Engineer")
                                                 : Url.Action("TechnicionDevices", "Device");
+                                            }
+
+                                            <div class="toast show my-2 shadow-sm" role="alert">
+                                                <div class="toast-header bg-light">
+                                                    <strong class="me-auto text-primary">@n.Title</strong>
+                                                    <small class="text-muted">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                                    <form asp-action="DeleteNotification" asp-controller="Notification" method="post" class="ms-2">
+                                                        <input type="hidden" name="Id" value="@n.Id" />
+                                                        <input type="hidden" name="curentUrl" value="@Context.Request.Path" />
+                                                        <button type="submit" class="btn-close"></button>
+                                                    </form>
+                                                </div>
+                                                <div class="toast-body" onclick="window.location.href='@url'" style="cursor:pointer;">
+                                                    @n.Message
+                                                </div>
+                                            </div>
+                                        }
                                     }
-
-                                    <div class="toast show my-2 shadow-sm" role="alert">
-                                        <div class="toast-header bg-light">
-                                            <strong class="me-auto text-primary">@n.Title</strong>
-                                            <small class="text-muted">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
-                                            <form asp-action="DeleteNotification" asp-controller="Notification" method="post" class="ms-2">
-                                                <input type="hidden" name="Id" value="@n.Id" />
-                                                <input type="hidden" name="curentUrl" value="@Context.Request.Path" />
-                                                <button type="submit" class="btn-close"></button>
-                                            </form>
-                                        </div>
-                                        <div class="toast-body" onclick="window.location.href='@url'" style="cursor:pointer;">
-                                            @n.Message
-                                        </div>
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <li><span class="dropdown-item text-muted">No notifications</span></li>
-                            }
-                        </ul>
-                    </li>
-
-                    <!-- User Info -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
-                            <img src="@(currentUser?.imagePath != null ? Url.Content("~/images/" + currentUser.imagePath) : Url.Content("~/images/user.png"))"
-                                 class="rounded-circle border shadow-sm"
-                                 style="width: 36px; height: 36px;" />
-                            <span class="fw-semibold">@displayName</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item text-primary" asp-controller="User" asp-action="Create_user_Edite" asp-route-id="@currentUser.Id">Profile</a></li>
-                            <li><hr class="dropdown-divider" /></li>
-                            <li>
-                                <form asp-controller="Account" asp-action="Logout" method="post">
-                                    <button class="dropdown-item text-danger">Logout</button>
-                                </form>
+                                    else
+                                    {
+                                        <li><span class="dropdown-item text-muted">No notifications</span></li>
+                                    }
+                                </ul>
                             </li>
-                        </ul>
-                    </li>
-                }
-                else
-                {
-                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">Register</a></li>
-                }
-            </ul>
-        </div>
-    </div>
-</nav>
+
+                            @* User Profile *@
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                                    <img src="@(currentUser?.imagePath != null ? Url.Content("~/images/" + currentUser.imagePath) : Url.Content("~/images/user.png"))"
+                                         class="rounded-circle border shadow-sm"
+                                         style="width: 36px; height: 36px;" />
+                                    <span class="fw-semibold">@displayName</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item text-primary" asp-controller="User" asp-action="Create_user_Edite" asp-route-id="@currentUser.Id">Profile</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button class="dropdown-item text-danger">Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Login</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">Register</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
     </header>
 
     <div class="container mb-3">
