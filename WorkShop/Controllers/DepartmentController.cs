@@ -29,76 +29,86 @@ namespace WorkShop.Controllers
 
 
 
+
         [HttpGet]
-        public IActionResult Index(string? searchTerm ,int page =1)
+        public IActionResult Index(string? searchTerm, int page = 1)
         {
-            var pageSize = 10;
-            var query = string.IsNullOrEmpty(searchTerm) ?
-                  _unitOfWork.departments.FindAll().ToList() :
-                  _unitOfWork.departments.FindAll().Where(d => d.Name.Contains(searchTerm)).ToList();
-            var totalDepartment = query.Count;
-            var pagedDepartments = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var viewModel = new DepartmentViewModel
+            try
             {
-                departments = pagedDepartments,
-                CurrentPage = page,
-                searchTerm = searchTerm,
-                TotalPages = (int)Math.Ceiling((double)totalDepartment / pageSize)
-            };
+                int pageSize = 10;
+                var query = string.IsNullOrEmpty(searchTerm)
+                    ? _unitOfWork.departments.FindAll().ToList()
+                    : _unitOfWork.departments.FindAll().Where(d => d.Name.Contains(searchTerm)).ToList();
 
+                int totalDepartment = query.Count;
+                var pagedDepartments = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
+                var viewModel = new DepartmentViewModel
+                {
+                    departments = pagedDepartments,
+                    CurrentPage = page,
+                    searchTerm = searchTerm,
+                    TotalPages = (int)Math.Ceiling((double)totalDepartment / pageSize)
+                };
 
-
-
-            return View(viewModel);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                // سجل الخطأ أو أظهر رسالة
+                TempData["Error"] = "An error occurred while loading departments."+$"{ex}"??"";
+                return View(new DepartmentViewModel());
+            }
         }
-
         public IActionResult Details(int? Id, string? searchTerm, int page = 1)
         {
-            if(Id == null)
+            try
             {
-                return NotFound();
+                if (Id == null)
+                {
+                    TempData["Error"] = $"There are no employees in this department.";
+                    return RedirectToAction("Index");
+                }
+                var department = _unitOfWork.departments.FindAll("UserDepartments")
+                                .FirstOrDefault(d => d.UserDepartments.Any(ud => ud.DepartmentId == Id));
+
+                if (department == null)
+                {
+                    TempData["Error"] = $"An error occurred while loading departments.";
+                    return RedirectToAction("Index");
+                }
+
+                int pageSize = 10;
+                var usersQuery = _unitOfWork.users.FindAll("UserDepartments")
+                                    .Where(u => u.UserDepartments.Any(ud => ud.DepartmentId == department.Id));
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    usersQuery = usersQuery.Where(u => u.FullName.Contains(searchTerm) || u.Email.Contains(searchTerm));
+                }
+
+                int totalUsers = usersQuery.Count();
+                var pagedUsers = usersQuery.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                var ViewModel = new DepartmentDetailsViewModel
+                {
+                    Department = department,
+                    Users = pagedUsers,
+                    TotalUsers = totalUsers,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
+                    SearchTerm = searchTerm
+                };
+
+                return View(ViewModel);
             }
-
-            int pageSize = 10;
-            var department = _unitOfWork.departments.FindAll("UserDepartments").FirstOrDefault(d => d.UserDepartments.Any(ud => ud.DepartmentId == Id));
-            var usersQuery = _unitOfWork.users
-                            .FindAll("UserDepartments")
-                            .Where(u => u.UserDepartments.Any(ud => ud.DepartmentId == department.Id));
-
-            if (department == null)
+            catch (Exception ex)
             {
-                // معالجة إذا لم يتم العثور على القسم
-                return NotFound();
+                TempData["Error"] = $"An error occurred while loading departments. {ex.Message}";
+                return RedirectToAction("Index");
             }
-
-            IEnumerable<User> users = _unitOfWork.users.FindAll().Where(d => d.UserDepartments.Any(u => u.DepartmentId == department.Id));
-
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                usersQuery = usersQuery.Where(u => u.FullName.Contains(searchTerm) || u.Email.Contains(searchTerm));
-            }
-
-            int totalUsers = usersQuery.Count();
-
-            var pagedUsers = usersQuery
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var ViewModel = new DepartmentDetailsViewModel
-            {
-                Department = department,
-                Users = pagedUsers,
-                TotalUsers = totalUsers,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
-                SearchTerm = searchTerm
-
-            };
-            return View(ViewModel);
         }
+
         [HttpGet]
         public IActionResult Create()
         {
@@ -110,22 +120,24 @@ namespace WorkShop.Controllers
         [HttpPost]
         public IActionResult Create(Department department)
         {
-            if (ModelState.IsValid)
+            try
             {
-         
+                if (ModelState.IsValid)
+                {
                     department.UpdateAt = DateTime.Now;
                     _unitOfWork.departments.Insert(department);
+                    return Json(new { success = true });
+                }
 
-
-
-                return Json(new { success = true });
+                return PartialView("_Create", department);
             }
-            else
+            catch (Exception ex)
             {
-                return PartialView("_Create",department);
+                ModelState.AddModelError("", "An error occurred while creating the department.");
+                return PartialView("_Create", department);
             }
-
         }
+
         [HttpGet]
         public IActionResult Edit(int? Id)
         {
@@ -142,22 +154,24 @@ namespace WorkShop.Controllers
         [HttpPost]
         public IActionResult Edit(Department department)
         {
-            if (ModelState.IsValid)
+            try
             {
-   
+                if (ModelState.IsValid)
+                {
                     department.UpdateAt = DateTime.Now;
                     _unitOfWork.departments.Update(department);
+                    return Json(new { success = true });
+                }
 
-
-
-                return Json(new { success = true }); ;
+                return PartialView("_Edit", department);
             }
-            else
+            catch (Exception ex)
             {
-                return PartialView("_Edit",department);
+                ModelState.AddModelError("", "An error occurred while editing the department.");
+                return PartialView("_Edit", department);
             }
-
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

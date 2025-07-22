@@ -2,32 +2,32 @@
 @{
     ViewData["Title"] = "Create";
 }
-
-
-<div class="modal fade" id="CreateDepartment">
-
+<div class="modal fade" id="CreateDepartment" tabindex="-1" aria-labelledby="CreateDepartmentLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content shadow-lg rounded-4 border-0">
             <form method="post" id="departmentForm" asp-controller="Department" asp-action="Create">
-            <div class="modal-header">
-                <h4>Create Department</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-            </div>
-            <div class="modal-body">
-                    <div class=" mb-3">
-                        <label asp-for="Name"></label>
-                        <input asp-for="Name" class="form-control" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
-            </div>
-            <div class="modal-footer">
-                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                
-            </div>
-                <div asp-validation-summary="All"></div>
-            </form>
+                <div class="modal-header bg-secondary text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="CreateDepartmentLabel">Create Department <i class="bi bi-building"></i></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control rounded-3 shadow-sm" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="modal-footer px-4 pb-4">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill">Save</button>
+                    <button type="button" class="btn btn-secondary w-100 rounded-pill mt-2" data-bs-dismiss="modal">Close</button>
+                </div>
+
+                <div class="px-4">
+                    <div asp-validation-summary="All" class="text-danger small"></div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -35,4 +35,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

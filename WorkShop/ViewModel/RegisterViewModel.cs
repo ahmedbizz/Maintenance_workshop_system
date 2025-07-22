@@ -26,7 +26,7 @@ namespace WorkShop.ViewModel
         public List<int> SelectedDepartmentIds { get; set; }
 
         // قائمة الأقسام لتعبئة الـ DropdownList أو Checkbox في الـ View
-        public List<SelectListItem> Departments { get; set; }
+        public List<SelectListItem>? Departments { get; set; }
 
         public IFormFile? Image { get; set; }
         public string? imagePath { get; set; }

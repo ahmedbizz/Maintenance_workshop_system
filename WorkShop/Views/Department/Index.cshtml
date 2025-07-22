@@ -3,89 +3,114 @@
     ViewData["Title"] = "Deprtments";
 }
 @using System.Text.Json
-<div class="row pt-4 align-items-center">
-    <div class="d-flex align-content-center">
-    <div class="col-4">
-        <h4 class="text-primary">Departments</h4>
-    </div>
-    <div class="col-6 text-center align-items-center">
 
-        <form class="d-flex">
-            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm">
-            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+<div class="container my-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+
+        <!-- Title -->
+        <h6 class="text-primary fw-semibold text-uppercase mb-0">
+            <i class="bi bi-building me-1"></i>Departments
+        </h6>
+
+        <!-- Search Form -->
+        <form class="d-flex gap-2 align-items-center" method="get">
+            <input class="form-control form-control-sm"
+                   type="search"
+                   name="searchTerm"
+                   placeholder="Search..."
+                   value="@Model.searchTerm"
+                   style="width: 200px;" />
+            <button class="btn btn-outline-secondary btn-sm" type="submit">
+                <i class="bi bi-search me-1"></i> Search
+            </button>
         </form>
+
+        <!-- Create Button -->
+        <button type="button" class="btn btn-primary btn-sm btnCreateDepartment" data-bs-toggle="modal" data-bs-target="#CreateDepartment">
+            <i class="bi bi-plus-lg me-1"></i> Create
+        </button>
+
     </div>
-    <div class="col-2 text-end align-items-center">
-
-        <button type="button" class="btn btn-primary btnCreateDepartment" data-toggle="modal" data-target="#CreateDepartment"><i class="bi bi-plus-lg"></i>Create</button>
-    </div>
-    </div>
-    <table class="table tab-content shadow m-4 p-2 table-hover">
-        <thead>
-            <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Create At</th>
-            <th>Update At</th>
-                <th class="text-center">Actons</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var department in Model.departments)
-            {
-                <tr>
-                    <td width="5%">@department.Id</td>
-                    <td width="30%">@department.Name</td>
-                    <td width="20%">@department.CreateAt</td>
-                    <td width="20%">@department.UpdateAt</td>
-                    <td width="25%">
 
 
-                        <a class="btn btn-outline-success " asp-controller="Report" asp-action="TiketByDepartment" asp-route-Id="@department.Id"><i class="bi bi-file-earmark-text"></i> Report</a>
-                        &nbsp;
 
-                        <button type="button" class="btn btn-outline-primary btnEditDepartment" data-toggle="modal" data-target="#EditDepartment" data-url="@Url.Action($"Edit", new { Id = department.Id })"><i class=" bi-pencil-square text-primary"></i> Edit</button>
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-hover shadow-sm align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var department in Model.departments)
+                        {
+                            <tr>
+                                <td>@department.Id</td>
+                                <td>@department.Name</td>
+                                <td>@department.CreateAt.ToString("yyyy-MM-dd")</td>
+                                <td>@department.UpdateAt.ToString("yyyy-MM-dd")</td>
+                                <td class="text-center">
 
-                        &nbsp;
-                        <a class="btn btn-outline-info " asp-controller="Department" asp-action="Details" asp-route-Id="@department.Id"><i class="bi bi-people"></i> Users</a>
-                        &nbsp;
+                                    <!-- Report -->
+                                    <a class="btn btn-outline-success btn-sm" asp-controller="Report" asp-action="TiketByDepartment" asp-route-id="@department.Id">
+                                        <i class="bi bi-file-earmark-text me-1"></i>Report
+                                    </a>
 
-                        <button type="button"
-                                class="btn btn-link p-0 m-0 border-0 text-danger btnDelete"
-                                data-bs-toggle="modal"
-                                data-id="@department.Id">
-                            <i class="bi-trash3"></i>
-                        </button>
-                    </td>
-                  
-    </tr>
-            }
-        </tbody>
+                                    <!-- Edit -->
+                                    <button type="button" class="btn btn-outline-primary btn-sm btnEditDepartment"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#EditDepartment"
+                                            data-url="@Url.Action("Edit", new { Id = department.Id })">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
+                                    </button>
 
-    </table>
+                                    <!-- Details -->
+                                    <a class="btn btn-outline-info btn-sm" asp-controller="Department" asp-action="Details" asp-route-id="@department.Id">
+                                        <i class="bi bi-people me-1"></i>Users
+                                    </a>
 
+                                    <!-- Delete -->
+                                    <button type="button"
+                                            class="btn btn-link text-danger btn-sm p-0 m-0 border-0 btnDelete"
+                                            data-bs-toggle="modal"
+                                            data-id="@department.Id">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+
+    <!-- Pagination -->
     @{
         int maxPagesToShow = 5;
         int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
         int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
-
-        // تعديل البداية إذا اقتربنا من النهاية
         if (endPage - startPage < maxPagesToShow - 1)
         {
             startPage = Math.Max(1, endPage - maxPagesToShow + 1);
         }
     }
 
-    <nav>
-        <ul class="pagination justify-content-center">
-
-            <!-- زر السابق -->
+    <nav class="m-4">
+        <ul class="pagination justify-content-center shadow-sm rounded-3 mb-5">
+            <!-- Previous -->
             <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
                 <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
 
+            <!-- Pages -->
             @for (int i = startPage; i <= endPage; i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
@@ -93,7 +118,7 @@
                 </li>
             }
 
-            <!-- زر التالي -->
+            <!-- Next -->
             <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
                 <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
@@ -101,67 +126,76 @@
             </li>
         </ul>
     </nav>
-
-
-</div>
-
-
-    @await Html.PartialAsync("_Create", new Department())
-    <div id="editSection"></div> <!-- سيتم تحميل محتوى _Edit هنا -->
-
-    <div class="modal fade" id="deletDepartment">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form asp-action="Delete_Department" method="post">
-                    <input name="Id" hidden />
-                    <div class="modal-header">
-                        <h5 class="modal-title">Delete Alert !!</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure to delete this department?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-danger">Yes</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </form>
-            </div>
         </div>
-    </div>
 
-    <!-- Modal لعرض الخطأ -->
-    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-danger">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="errorModalLabel">Deletion error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="errorModalMessage">@TempData["DeleteError"]</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="messageModalLabel">Message</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <p id="modalMessage"></p>
-            </div>
-        </div>
-    </div>
-</div>
+
+                <!-- Create Department Modal -->
+@await Html.PartialAsync("_Create", new Department())
+
+                <!-- Edit Section Placeholder -->
+                <div id="editSection"></div>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" id="deletDepartment" tabindex="-1" aria-labelledby="deleteDepartmentLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content shadow-sm border-0 rounded-3">
+                            <form asp-action="Delete_Department" method="post">
+                                <input name="Id" hidden />
+                                <div class="modal-header bg-warning text-dark">
+                                    <h5 class="modal-title fw-bold" id="deleteDepartmentLabel">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Alert !!
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <p class="fs-5">Are you sure you want to delete this department?</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger w-100 rounded-pill">Yes, Delete</button>
+                                    <button type="button" class="btn btn-secondary w-100 rounded-pill mt-2" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Modal -->
+                <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border border-danger shadow-sm rounded-3">
+                            <div class="modal-header bg-danger text-white rounded-top-3">
+                                <h5 class="modal-title fw-bold" id="errorModalLabel">
+                                    <i class="bi bi-x-octagon-fill me-2"></i>Deletion Error
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <p id="errorModalMessage" class="fs-6">@TempData["DeleteError"]</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary w-100 rounded-pill" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content shadow-lg rounded-4 border-0">
+                            <div class="modal-header bg-info text-white rounded-top-4">
+                                <h5 class="modal-title fw-bold" id="messageModalLabel">
+                                    <i class="bi bi-info-circle me-2"></i>Message
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center py-4">
+                                <p id="modalMessage" class="fs-5 text-secondary fw-semibold"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 

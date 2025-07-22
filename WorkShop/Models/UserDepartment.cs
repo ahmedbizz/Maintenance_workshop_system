@@ -6,11 +6,11 @@ namespace WorkShop.Models
     {
         public string UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User? User { get; set; }
 
         public int DepartmentId { get; set; }
         [ForeignKey("DepartmentId")]
-        public Department Department { get; set; }
+        public Department? Department { get; set; }
     }
 
 }

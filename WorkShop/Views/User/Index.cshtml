@@ -3,118 +3,102 @@
     ViewData["Title"] = "Users";
 }
 @using System.Text.Json
-<div class="row pt-4 align-items-center">
-    <div class="d-flex justify-content-between align-items-center">
-    <div class="col-2">
-        <h1 class="text-primary">Users</h1>
-    </div>
-    <div class="col-6 text-center align-items-center">
 
-            <form class="d-flex">
-                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
-                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Users</h2>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+            <!-- Search Form -->
+            <form class="d-flex gap-2 align-items-center" method="get">
+                <input class="form-control form-control-sm"
+                       type="search"
+                       name="searchTerm"
+                       placeholder="Search..."
+                       value="@Model.SearchTerm"
+                       style="width: 200px;" />
+                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
             </form>
+            <button class="btn btn-outline-info btn-sm me-2 btnImportExcel" data-bs-toggle="modal" data-bs-target="#ImportExcel">
+                <i class="bi bi-file-earmark-arrow-up"></i> Import
+            </button>
+            <a asp-action="Create_user_Edite" asp-controller="User" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Create
+            </a>
+        </div>
     </div>
 
-        <button type="button"
-                class="btn btn-light btnImportExcel"
-                data-bs-toggle="modal"
-                data-bs-target="#ImportExcel">
-            <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
-        </button>
-
-    <div class="col-2 text-end align-items-center">
-
-        <a asp-action="Create_user_Edite" asp-controller="User"  class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
-
-    </div>
-    </div>
-    <table class="table tab-content shadow m-4 p-2 table-hover">
-        <thead class="table-dark">
-            <tr class="text-center">
-                <th>Img</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Department</th>
-                <th >Update At</th>
-                <th  >Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model.users)
-            {
-                <tr class="text-center align-content-center justify-content-center" >
-      
-                    <td width="10%"><img src="~/images/@user.imagePath" style="width:50px;border-radius:50px" class="img-thumbnail"/></td>
-                    <td width="20%">@user.FullName</td>
-                    <td width="20%">@user.Email</td>
-                   
-                    <td width="10%">
-                            @foreach( var dep in user.UserDepartments)
-                            {<ul>
-                                <li>
-                                    <span class="badge bg-light">@dep.Department.Name</span>
-                                </li>
-                            </ul>
-                               
-                            }
-                      
-                    <td width="20%">@user.UpdateAt</td>
-                    <td width="20%">
-
-                        <a class="btn btn-outline-success " asp-controller="Report" asp-action="UserMintenanceHistory" asp-route-Id="@user.Id"><i class="bi bi-file-earmark-text"></i> Report</a>
-                        &nbsp;
-                        <a asp-controller="User" asp-action="Create_user_Edite" asp-route-Id="@user.Id"><i class=" bi-pencil-square text-primary"></i></a>
-
-                        &nbsp;
-                        <button type="button"
-                                class="btn btn-link p-0 m-0 border-0 text-danger btnDelete"
-                                data-bs-toggle="modal"
-                                data-id="@user.Id">
-                            <i class="bi-trash3"></i>
-                        </button>
-                    </td>
-
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle shadow-sm">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Departments</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.users)
+                {
+                    <tr class="text-center">
+                        <td>
+                            <img src="~/images/@user.imagePath" class="rounded-circle shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
+                        </td>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            @foreach (var dep in user.UserDepartments)
+                            {
+                                <span class="badge bg-light text-dark border border-secondary me-1">@dep.Department.Name</span>
+                            }
+                        </td>
+                        <td>@user.UpdateAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a class="btn btn-sm btn-outline-success" asp-controller="Report" asp-action="UserMintenanceHistory" asp-route-Id="@user.Id">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </a>
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="User" asp-action="Create_user_Edite" asp-route-Id="@user.Id">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger btnDelete" data-id="@user.Id">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
-    </table>
-
+    @* Pagination *@
     @{
         int maxPagesToShow = 5;
         int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
         int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
-
-        // تعديل البداية إذا اقتربنا من النهاية
         if (endPage - startPage < maxPagesToShow - 1)
         {
             startPage = Math.Max(1, endPage - maxPagesToShow + 1);
         }
     }
-
     <nav>
         <ul class="pagination justify-content-center">
-
-            <!-- زر السابق -->
             <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })">&laquo;</a>
             </li>
-
             @for (int i = startPage; i <= endPage; i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                     <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
                 </li>
             }
-
-            <!-- زر التالي -->
             <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })">&raquo;</a>
             </li>
         </ul>
     </nav>

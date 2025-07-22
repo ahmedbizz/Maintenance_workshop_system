@@ -86,7 +86,7 @@
                             }
 
                             @* Engineer *@
-                            @if (User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Admin))
+                            @if (User.IsInRole(Roles.Engineer))
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="AddDevice"
                                        style="text-decoration:none; transition: transform 0.3s;"
@@ -101,7 +101,7 @@
                             }
 
                             @* Devices access *@
-                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
+                            @if (User.IsInRole(Roles.Technion) || User.IsInRole(Roles.Engineer) || User.IsInRole(Roles.Officer))
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Device" asp-action="Index"
                                        style="text-decoration:none; transition: transform 0.3s;"
@@ -141,7 +141,7 @@
                             }
 
                             @* Officer *@
-                            @if (User.IsInRole(Roles.Officer) || User.IsInRole(Roles.Admin))
+                            @if (User.IsInRole(Roles.Officer) )
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Officer" asp-action="ReviewPartsRequestsByOfficer"
                                        style="text-decoration:none; transition: transform 0.3s;"

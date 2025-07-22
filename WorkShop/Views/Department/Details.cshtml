@@ -1,55 +1,76 @@
 ﻿@model WorkShop.ViewModel.DepartmentDetailsViewModel
 
-<h2 class="text-center">Department employees</h2>
+<div class="container mt-4">
 
-<div>
-    <div><h4>Department</h4><h3>@Model.Department.Name</h3></div>
-    <hr />
-    <h4 class="text-center">Epmloyee in this deoartment</h4>
-    <div class="col-6 text-center align-items-center">
 
-        <form class="d-flex">
-            <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.SearchTerm">
-            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-        </form>
+    <div class="bg-white shadow-sm rounded p-3 mb-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <div>
+                    <h5 class="mb-0 fw-semibold" style="font-size: 1.1rem;"> <i class="bi bi-building me-1"></i>@Model.Department.Name Employees</h5>
+                
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-6">
+            <form class="d-flex" method="get">
+                <input class="form-control form-control-sm me-2 rounded-pill" type="search" name="searchTerm" placeholder="Search employees..." value="@Model.SearchTerm" style="font-size: 0.9rem;">
+                <button class="btn btn-outline-primary rounded-pill px-4 btn-sm" type="submit" style="font-size: 0.9rem;">Search</button>
+            </form>
+        </div>
+    </div>
+
     @if (Model.Users != null && Model.Users.Any())
     {
-        <table class="table shadow table-hover">
-            <thead>
-                <tr>
-                    <th>Department</th>
-                    <th>Email </th>
-                    <th>phone</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Model.Users)
-                {
-                    <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create_user_Edite", "User", new { id = user.Id })'">
-                        <td>@user.FullName</td>
-                        <td>@user.Email</td>
-                        <td>@user.PhoneNumber</td>
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Employee</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Phone</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create_user_Edite", "User", new { id = user.Id })'">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="@(user?.imagePath != null ? Url.Content("~/images/" + user.imagePath) : Url.Content("~/images/user.png"))" alt="User Image" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <span>@user.FullName</span>
+                                </div>
+                            </td>
+                            <td>@user.Email</td>
+                            <td>@user.PhoneNumber</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
-            <nav>
-        <ul class="pagination justify-content-center">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center pagination-sm">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i })" style="font-size: 0.85rem;">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
     else
     {
-        <p>There is no employyes in this department.</p>
+        <div class="alert alert-warning text-center" role="alert" style="font-size: 0.9rem;">
+            There are no employees in this department.
+        </div>
     }
-</div>
 
-<a asp-action="Index" class=" btn btn-danger">Back</a>
+    <div class="text-center mt-4">
+        <a asp-action="Index" class="btn btn-outline-danger rounded-pill px-4 btn-sm" style="font-size: 0.9rem;">Back</a>
+    </div>
+</div>

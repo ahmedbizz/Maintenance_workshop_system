@@ -3,33 +3,42 @@
     ViewData["Title"] = "Edit";
 }
 
-
-<div class="modal fade" id="EditDepartment">
-
+<div class="modal fade" id="EditDepartment" tabindex="-1" aria-labelledby="EditDepartmentLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content shadow-lg border-0 rounded-4">
             <form method="post" id="departmentForm" asp-controller="Department" asp-action="Edit">
-              
-                <div class="modal-header">
-                    <h4>Edit Department</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+
+                <!-- Modal Header -->
+                <div class="modal-header bg-secondary text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="EditDepartmentLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Department
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class=" mb-3">
-                        <input name="Id" asp-for="Id" hidden />
-                        <label asp-for="Name"></label>
-                        <input asp-for="Name" class="form-control" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
+
+                <!-- Modal Body -->
+                <div class="modal-body p-4">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold text-secondary"></label>
+                        <input asp-for="Name" class="form-control rounded-3 shadow-sm" placeholder="Enter department name" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 
+                <!-- Modal Footer -->
+                <div class="modal-footer bg-light rounded-bottom-4 px-4 py-3">
+                    <button type="submit" class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-check-circle"></i> Save
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
                 </div>
-                <div asp-validation-summary="All"></div>
-            </form>
 
+                <div asp-validation-summary="All" class="text-danger small mt-2 px-4"></div>
+            </form>
         </div>
     </div>
 </div>
@@ -37,4 +46,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-
