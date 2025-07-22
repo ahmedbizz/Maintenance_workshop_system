@@ -1,76 +1,87 @@
 ﻿@model WorkShop.ViewModel.StoreDetailsViewModel
 
+<div class="container py-4">
 
-
-<div>
-    <div class="d-flex justify-content-between"><h3>@Model.store</h3><h4>Warehouse</h4></div>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary mb-0">@Model.store</h3>
+        <h4 class="text-secondary mb-0">Warehouse</h4>
+    </div>
     <hr />
-    <h4 class="text-center">Products in the store</h4>
+
+    <!-- Section title -->
+    <h4 class="text-center text-dark mb-4">Products in the Store</h4>
 
     @if (Model.products != null && Model.products.Any())
     {
-        <table class="table shadow table-hover">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Store</th>
-                    <th>Qty</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var productSK in Model.products)
-                {
-                    <tr style="cursor:pointer" onclick="location.href='@Url.Action("Create", "Product", new { id = productSK.productId })'">
-                        <td>@productSK.product.Name</td>
-                        <td>@Model.store</td>
-                        <td>@productSK.quantity</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    
-        int maxPagesToShow = 5;
-        int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
-        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+        <div class="card shadow rounded-4">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Store</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var productSK in Model.products)
+                        {
+                            <tr style="cursor:pointer"
+                                onclick="location.href='@Url.Action("Create", "Product", new { id = productSK.productId })'">
+                                <td>@productSK.product?.Name</td>
+                                <td>@Model.store</td>
+                                <td>@productSK.quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        // تعديل البداية إذا اقتربنا من النهاية
-        if (endPage - startPage < maxPagesToShow - 1)
-        {
-            startPage = Math.Max(1, endPage - maxPagesToShow + 1);
-        }
-    
+        <!-- Pagination -->
+      
+            int maxPagesToShow = 5;
+            int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
+            int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
 
-    <nav>
-        <ul class="pagination justify-content-center">
-
-            <!-- زر السابق -->
-            <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-
-            @for (int i = startPage; i <= endPage; i++)
+            if (endPage - startPage < maxPagesToShow - 1)
             {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="@Url.Action("Details", new { page = i })">@i</a>
-                </li>
+                startPage = Math.Max(1, endPage - maxPagesToShow + 1);
             }
+        
 
-            <!-- زر التالي -->
-            <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage + 1 })" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
 
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Details", new { page = i })">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Details", new { page = Model.CurrentPage + 1 })" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     }
     else
     {
-        <p>No products Avilable in the Warehouse.</p>
+        <div class="alert alert-warning text-center">No products available in the warehouse.</div>
     }
-</div>
 
-<a asp-action="Index" class=" btn btn-danger">Back</a>
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+        <a asp-action="Index" class="btn btn-outline-danger px-4">Back</a>
+    </div>
+
+</div>

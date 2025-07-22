@@ -1,15 +1,17 @@
 ﻿@model List<SparePartRequest>
 
-<div class="container mt-4" dir="ltr">
+<div class="container mt-5" dir="ltr">
 
+    <!-- Alerts -->
     @if (TempData["Massege"] != null)
     {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <strong>Warning:</strong> @TempData["Massege"]
+        <div class="alert alert-warning alert-dismissible fade show shadow" role="alert">
+            <strong>Notice:</strong> @TempData["Massege"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
+    <!-- Success Modal -->
     @if (TempData["Success"] != null)
     {
         <div class="modal fade" id="SuccessModal" tabindex="-1" aria-labelledby="SuccessModalLabel" aria-hidden="true">
@@ -20,93 +22,96 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <strong>Well done!</strong> @TempData["Success"]
+                        ✅ @TempData["Success"]
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
         </div>
     }
 
-    <h3 class="mb-4 text-primary">Spare Parts Requests</h3>
+    <!-- Page Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary">Spare Parts Requests</h3>
+        <i class="bi bi-tools fs-3 text-muted"></i>
+    </div>
 
-    <table class="table table-bordered table-striped align-middle shadow-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>Device Serial Number</th>
-                <th>Requested Parts</th>
-                <th>Request Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var req in Model)
-            {
+    <!-- Requests Table -->
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle shadow-sm">
+            <thead class="table-dark text-center">
                 <tr>
-                    <td>@req.Device.SerialNumber</td>
-                    <td>
-                        <ul class="mb-0">
-                            @foreach (var item in req.Items)
-                            {
-                                <li>@item.Product.Name - Qty: @item.Quantity</li>
-                            }
-                        </ul>
-                    </td>
-                    <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
-                    <td>
-                        <button type="button" onclick="confirmation(@req.Id)" class="btn btn-success">
-                            Deliver Parts
-                        </button>
-                    </td>
+                    <th>Device Serial</th>
+                    <th>Requested Parts</th>
+                    <th>Request Date</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody class="text-center">
+                @foreach (var req in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@req.Device.SerialNumber</td>
+                        <td class="text-start">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var item in req.Items)
+                                {
+                                    <li class="list-group-item">
+                                        <span class="fw-bold">@item.Product.Name</span>
+                                        <span class="badge bg-primary rounded-pill ms-2">Qty: @item.Quantity</span>
+                                    </li>
+                                }
+                            </ul>
+                        </td>
+                        <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <button class="btn btn-outline-success" onclick="confirmation(@req.Id)">
+                                <i class="bi bi-box-arrow-down"></i> Deliver
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Confirmation Modal -->
+    <!-- Confirm Modal -->
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content shadow">
-                <div class="modal-header">
+                <div class="modal-header bg-warning">
                     <h5 class="modal-title" id="confirmModalLabel">Confirm Delivery</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to deliver these items?
+                    Are you sure you want to mark this request as delivered?
                 </div>
                 <div class="modal-footer">
                     <form asp-action="PendingDeliveries" asp-controller="Store" method="post">
                         <input type="hidden" name="RequestId" id="confirmItemId" />
-                        <button type="submit" class="btn btn-danger" onclick="Success()">Yes, Deliver</button>
+                        <button type="submit" class="btn btn-success">Yes, Deliver</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 
 @section Scripts {
     <script>
         function confirmation(id) {
-            document.getElementById('confirmItemId').value = id;
-            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            $('#confirmItemId').val(id);
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             confirmModal.show();
         }
 
-        function Success() {
-            var successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
-            successModal.show();
-        }
-
-        // Auto show success modal if TempData["Success"] is set
-        document.addEventListener("DOMContentLoaded", function () {
-            var hasSuccess = '@TempData["Success"]' !== '';
-            if (hasSuccess) {
-                var successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
+        $(document).ready(function () {
+            const success = '@TempData["Success"]';
+            if (success && success.trim() !== '') {
+                const successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
                 successModal.show();
             }
         });

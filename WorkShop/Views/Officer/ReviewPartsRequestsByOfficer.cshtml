@@ -4,47 +4,57 @@
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
 @inject WorkShop.Repository.Base.IUnitOfWork _unitOfWork
-<div class="container mt-4">
-    <h2 class="text-primary">Requests awaiting officer approval</h2>
-    <hr />
-    <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Device </th>
-                <th> S/N</th>
-                <th>Technician</th>
-                <th>Engineer Aproval</th>
-                <th> Report</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody
-            @{
-               var engs = await UserManager.GetUsersInRoleAsync(Roles.Engineer);
-             }
-    
-            @foreach (var device in Model)
-            {
-                
-                <tr data-url=@Url.Action("DetailsPartsRequestsByOfficer", "Officer", new { id = device.Id })
-                    onclick="window.location.href = this.dataset.url"
-                    style="cursor: pointer;">
-                    <td>@device.Product?.Name</td>
-                    <td>@device.SerialNumber</td>
-                    <td>@device.Technician?.FullName</td>
-                    <td>@engs.FirstOrDefault(eng => eng.Id == device.MaintenanceCard?.EngineerId).FullName</td>
-                    <td>@device.MaintenanceCard?.TechnicianReport</td>
-                    <td>
-     
-                           <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
-                                <button class="btn btn-success btn-sm">Aprrove</button>
-                            </form>
-                        <form method="post" asp-action="RejectByOfficer" asp-controller="Officer" asp-route-id="@device.Id" style="display:inline-block">
-                            <button class="btn btn-danger btn-sm">Reject</button>
-                        </form>
-                    </td>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary mb-0">Requests Awaiting Officer Approval</h3>
+        <i class="bi bi-shield-check text-success fs-3"></i>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-bordered align-middle mb-0">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Device</th>
+                    <th>S/N</th>
+                    <th>Technician</th>
+                    <th>Engineer</th>
+                    <th>Report</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @{
+                    var engs = await UserManager.GetUsersInRoleAsync(Roles.Engineer);
+                }
+
+                @foreach (var device in Model)
+                {
+                    var engineer = engs.FirstOrDefault(eng => eng.Id == device.MaintenanceCard?.EngineerId);
+
+                    <tr class="text-center align-middle"
+                        data-url="@Url.Action("DetailsPartsRequestsByOfficer", "Officer", new { id = device.Id })"
+                        style="cursor: pointer;"
+                        onclick="window.location.href = this.dataset.url">
+
+                        <td>@device.Product?.Name</td>
+                        <td>@device.SerialNumber</td>
+                        <td>@device.Technician?.FullName</td>
+                        <td>@engineer?.FullName</td>
+                        <td class="text-wrap" style="max-width: 200px;">@device.MaintenanceCard?.TechnicianReport</td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <form method="post" asp-action="ApproveByOfficer" asp-controller="Officer" asp-route-id="@device.Id">
+                                    <button type="submit" class="btn btn-success btn-sm px-3">Approve</button>
+                                </form>
+                                <form method="post" asp-action="RejectByOfficer" asp-controller="Officer" asp-route-id="@device.Id">
+                                    <button type="submit" class="btn btn-danger btn-sm px-3">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

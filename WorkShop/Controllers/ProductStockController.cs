@@ -14,55 +14,66 @@ namespace WorkShop.Controllers
     public class ProductStockController : Controller
     {
 
-        public ProductStockController(IUnitOfWork unitOfWork , UserManager<User> userManager)
+        public ProductStockController(IUnitOfWork unitOfWork , UserManager<User> userManager, ILogger<ProductStockController> logger)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _logger = logger;
         }
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly ILogger<ProductStockController> _logger;
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var curentUser = await _userManager.Users
+            try
+            {
+                var curentUser = await _userManager.Users
                 .Include(u => u.UserDepartments)
                 .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
-            List<ProductStock> query;
-            var pageSize = 10;
-            if (isAdmin)
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                         _unitOfWork.productStoks.FindAll("product", "store").ToList() :
-                         _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store").ToList();
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<ProductStock> query;
+                var pageSize = 10;
+                if (isAdmin)
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                             _unitOfWork.productStoks.FindAll("product", "store").ToList() :
+                             _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store").ToList();
+                }
+                else
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                            _unitOfWork.productStoks.FindAll("product", "store").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList() :
+                            _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store")
+                            .ToList();
+
+
+
+                }
+                int totalItems = query.Count();
+
+                var productStocks = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var viewModel = new ProductStockViewModel
+                {
+                    ProductStocks = productStocks,
+                    SearchTerm = searchTerm,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+                };
+
+
+                return View(viewModel);
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error in Index method");
+                TempData["Error"] = "Can't loade this page create product Error hapen.";
+                return RedirectToAction("Index");
             }
-            else
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                        _unitOfWork.productStoks.FindAll("product", "store").Where(p => userDepartmentIds.Contains(p.product.DepartmentId)).ToList() :
-                        _unitOfWork.productStoks.SearchBycondition(p => p.product.Name.Contains(searchTerm) || p.store.Name.Contains(searchTerm), "product", "store")
-                        .ToList();
+            
 
-
-
-            }
-            int totalItems = query.Count();
-
-            var productStocks = query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var viewModel = new ProductStockViewModel
-            {
-                ProductStocks = productStocks,
-                SearchTerm = searchTerm,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
-            };
-
-
-            return View(viewModel);
         }
         public IActionResult Details() { return View(); }
 
@@ -101,61 +112,86 @@ namespace WorkShop.Controllers
         [Authorize(Roles =  Roles.StoreKeeper + "," + Roles.Admin)]
         public async Task<IActionResult> Create(ProductStock stock)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 
-            if (isAdmin)
+            try
             {
-                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
-                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
-            }
-            else
-            {
-                ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => userDepartmentIds.Contains(s.DepartmentId)), "Id", "Name");
-                ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => userDepartmentIds.Contains(p.DepartmentId)), "Id", "Name");
-            }
-            if (ModelState.IsValid)
-            {
-                var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);
-                if (productStok == null)
+                var curentUser = await _userManager.Users
+                .Include(u => u.UserDepartments)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
 
+                if (isAdmin)
                 {
-                    _unitOfWork.productStoks.Insert(stock);
+                    ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll(), "Id", "Name");
+                    ViewBag.Products = new SelectList(_unitOfWork.products.FindAll(), "Id", "Name");
                 }
                 else
                 {
-                    productStok.quantity = stock.quantity;
-                    productStok.productId = stock.productId;
-                    productStok.storeId = stock.storeId;
-                    _unitOfWork.productStoks.Update(productStok);
+                    ViewBag.Stores = new SelectList(_unitOfWork.stores.FindAll().Where(s => userDepartmentIds.Contains(s.DepartmentId)), "Id", "Name");
+                    ViewBag.Products = new SelectList(_unitOfWork.products.FindAll().Where(p => userDepartmentIds.Contains(p.DepartmentId)), "Id", "Name");
                 }
+                if (ModelState.IsValid)
+                {
+                    var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);
+                    if (productStok == null)
 
+                    {
+                        _unitOfWork.productStoks.Insert(stock);
+                        TempData["Success"] = "created Successfully";
+                    }
+                    else
+                    {
+                        productStok.quantity = stock.quantity;
+                        productStok.productId = stock.productId;
+                        productStok.storeId = stock.storeId;
+                        _unitOfWork.productStoks.Update(productStok);
+                        TempData["Success"] = "Upadte Successfully";
+                    }
+
+                    await _unitOfWork.CompleteAsync();
+                    return RedirectToAction("Index");
+
+                }
+                else
+                {
+
+
+                    return View(stock);
+                }
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error in Create method");
+                TempData["Error"] = "Can't loade this page create stock Error hapen.";
                 return RedirectToAction("Index");
-
             }
-            else
-            {
 
-
-                return View(stock);
-            }
 
 
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.StoreKeeper + "," + Roles.Admin)]
         public IActionResult Delete(ProductStock stock)
         {
-            var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);
-            if (productStok == null)
+            try
             {
-                return NotFound();
-            }
-            if (stock.quantity <= 0)
+                var productStok = _unitOfWork.productStoks.FindByKeys(stock.productId, stock.storeId);
+                if (productStok == null)
+                {
+                    return NotFound();
+                }
+                if (stock.quantity <= 0)
+                {
+                    _unitOfWork.productStoks.Delete(productStok.productId, stock.storeId);
+                }
+                return RedirectToAction("Index");
+            } catch (Exception ex)
             {
-                _unitOfWork.productStoks.Delete(productStok.productId, stock.storeId);
+                _logger.LogError(ex, "Error in delete method");
+                TempData["Error"] = "Can't delete this  stock Error hapen.";
+                return RedirectToAction("Index");
             }
-            return RedirectToAction("Index");
+
 
         }
 

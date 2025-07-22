@@ -1,104 +1,111 @@
-﻿
-@{
-    Layout = "~/Views/Shared/_Layout.cshtml"; // أو حسب الـ Layout الخاص بك
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
-
 @model IEnumerable<WorkShop.ViewModel.CreateGroupViewModel>
+@using System.Text.Json
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="text-primary fw-semibold text-uppercase mb-0"><i class="bi bi-diagram-3-fill"></i> Groups</h6>
+        <a class="btn btn-primary" asp-action="Create" asp-controller="Group">
+            <i class="bi bi-plus-circle me-1"></i> Create
+        </a>
+    </div>
 
-
-<div class="d-flex justify-content-between m-5">
-    <div class="col text-info"><h3>Groups</h3> </div>
-    <a class="btn btn-primary" asp-action="Create" asp-controller="Group">Create</a>
-</div>
-<div>
-
-    <table id="partsTable" class="table table-hover shadow">
-        <thead>
-            <tr>
-                <th scope="col">Group Name</th>
-                <th scope="col">Description</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var group in Model)
-            {
+    <div class="table-responsive shadow-sm">
+        <table id="partsTable" class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
                 <tr>
-                    <td>@group.Name</td>
-                    <td>@group.Description</td>
-                    <td>
-                        <a asp-controller="Group" asp-action="AssignUsers" asp-route-Id="@group.Id"><i class="bi bi-people"></i>AssignUsers</a>
-                        &nbsp;
-                        <a asp-controller="Group" asp-action="AssignRoles" asp-route-Id="@group.Id"><i class="bi bi-shield-check"></i>AssignRoles</a>
-                        &nbsp;
-                        <a asp-controller="Group" asp-action="Create" asp-route-Id="@group.Id"><i class=" bi-pencil-square text-primary"></i></a>
-
-                        &nbsp;
-                  
-                            <button type="button" class="btn btn-link p-0 m-0 border-0 text-danger"
-                                    onclick="confirmDelete(@group.Id)">
-                                <i class="bi-trash3"></i>
-                            </button>
-
-                       
-                    </td>
+                    <th scope="col">Group Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" class="text-center">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var group in Model)
+                {
+                    <tr>
+                        <td>@group.Name</td>
+                        <td>@group.Description</td>
+                        <td class="text-center">
+                            <a class="btn btn-sm btn-outline-secondary me-1" asp-controller="Group" asp-action="AssignUsers" asp-route-Id="@group.Id" title="Assign Users">
+                                <i class="bi bi-people"></i>
+                            </a>
+                            <a class="btn btn-sm btn-outline-secondary me-1" asp-controller="Group" asp-action="AssignRoles" asp-route-Id="@group.Id" title="Assign Roles">
+                                <i class="bi bi-shield-check"></i>
+                            </a>
+                            <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Group" asp-action="Create" asp-route-Id="@group.Id" title="Edit Group">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@group.Id)" title="Delete Group">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-    <!-- Modal تأكيد الحذف -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content shadow">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+   
+                <div class="modal-body text-center">
+                    <p class="mb-0">Are you sure you want to delete this item?</p>
                 </div>
-               
+          
 
-                    @if (TempData["Massege"] != null)
-                    {
-
-                        <div class="alert alert-danger">
-                            @TempData["Massege"]
-                        </div>
-
-
-
-
-                    }else{
-                         <div class="modal-body">
-                    هل أنت متأكد أنك تريد حذف هذا العنصر؟
-                </div>
-                    }
-                
-                <div class="modal-footer">
-                    <form id="deleteForm" asp-action="Delete" asp-controller="Group" method="post">
-                        <input type="hidden" name="Id" id="deleteItemId" />
-                  @if (TempData["Massege"] == null)
-                    {
-
-                        <button type="submit" class="btn btn-danger">نعم، احذف</button>
-                    }
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    </form>
-                </div>
+            <div class="modal-footer">
+                <form id="deleteForm" asp-action="Delete" asp-controller="Group" method="post" class="d-flex w-100 justify-content-between">
+                    <input type="hidden" name="Id" id="deleteItemId" />
+              
+                  <button type="submit" class="btn btn-danger">yes , delete</button>
+                 
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </form>
             </div>
         </div>
     </div>
-
+</div>
+<!-- Message Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-sm">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6"></p>
+            </div>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <script>
         function confirmDelete(id) {
-            // تعيين القيمة في الـ input المخفي داخل النموذج
             document.getElementById('deleteItemId').value = id;
-            // فتح الـ Modal
             var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             deleteModal.show();
         }
+        $(document).ready(function () {
+            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+            var messageFromTempData  = @Html.Raw(JsonSerializer.Serialize(TempData["Massege"]));
+
+            let message = success || error || messageFromTempData;
+            if (message && message.trim() !== "") {
+                $('#modalMessage').text(message);
+                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+                modal.show();
+            }
+        });
     </script>
 }

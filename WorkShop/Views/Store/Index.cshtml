@@ -2,167 +2,200 @@
 @{
     ViewData["Title"] = "Store";
 }
+@using System.Text.Json
+<div class="container mt-4">
+    <div class="card shadow rounded-4">
+        <div class="card-body">
 
-<div class="row pt-4 align-items-center">
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-4">
+                    <h3 class="text-primary"><i class="bi bi-box-seam"></i> Store</h3>
+                </div>
+                <div class="col-md-4">
+                    <form class="d-flex" method="get">
+                        <input class="form-control me-2" type="search" name="searchTerm" placeholder="Search by name or part number" value="@Model.searchTerm">
+                        <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a asp-action="Create" asp-controller="Store" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Create
+                    </a>
+                </div>
+            </div>
 
 
-
-
-    <div class="d-flex align-items-center justify-content-between">
-        <div class="col-3">
-            <h1 class="text-primary">Store</h1>
+   
+        <div class="table-responsive">
+            <table class="table table-hover shadow-sm align-middle text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var store in Model.stors)
+                    {
+                        <tr>
+                            <td>@store.Id</td>
+                            <td>@store.Name</td>
+                            <td>@store.department?.Name</td>
+                            <td>@store.CreateAt.ToString("yyyy-MM-dd")</td>
+                            <td>@store.UpdateAt.ToString("yyyy-MM-dd")</td>
+                            <td class="text-center">
+                                    <a asp-controller="Store" asp-action="Details" asp-route-Id="@store.Id" class="btn btn-sm btn-outline-success me-1 "> <i class="bi bi-file-earmark-text me-1"></i></a>
+                                    <a asp-controller="Store" asp-action="Create" asp-route-Id="@store.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger btnDelete"
+                                        data-id="@store.Id"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-
-        <div class="col-6 text-center align-items-center">
-
-            <form class="d-flex">
-                <input class="form-control me-sm-2" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm">
-                <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-            </form>
+  
         </div>
-        <div class="col-3 text-end align-items-center">
-            <a asp-action="Create" asp-controller="Store" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Create</a>
+        <!-- Pagination -->
+        @{
+            int maxPagesToShow = 5;
+            int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
+            int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+            if (endPage - startPage < maxPagesToShow - 1)
+            {
+                startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+            }
+        }
 
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })">&laquo;</a>
+                </li>
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+</div>
+
+
+    <!-- Modal: Confirm Delete -->
+    <div class="modal fade" id="deleteProduct" tabindex="-1" aria-labelledby="deleteProductLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-sm border-0">
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" name="Id" />
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteProductLabel"><i class="bi bi-trash3"></i> Confirm Deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-danger fw-bold text-center">Are you sure you want to delete this product?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <table class="table tab-content shadow m-4 p-2 table-hover">
-        <thead>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Department</th>
-        <th>Create At</th>
-        <th>Update At</th>
-        <th></th>
-        </thead>
-        <tbody>
-            @foreach (var store in Model.stors)
-            {
-                <tr>
-                    <td width="10%">@store.Id</td>
-                    <td width="20%">@store.Name</td>
-                    <td width="20%">@store.department.Name</td>
-                    <td width="20%">@store.CreateAt</td>
-                    <td width="20%">@store.UpdateAt</td>
-                    <td width="20%">
-
-                        <a asp-controller="Store" asp-action="Details" asp-route-Id="@store.Id">Detiles</a>
-                        &nbsp;
-                        <a asp-controller="Store" asp-action="Create" asp-route-Id="@store.Id"><i class=" bi-pencil-square text-primary"></i></a>
-
-                        &nbsp;
-      
-
-                        <button type="button"
-                                class="btn btn-link p-0 m-0 border-0 text-danger btnDelete"
-                                data-bs-toggle="modal"
-                                data-id="@store.Id">
-                            <i class="bi-trash3"></i>
-                        </button>
-                    </td>
-
-                </tr>
-            }
-        </tbody>
-
-    </table>
-    @{
-        int maxPagesToShow = 5;
-        int startPage = Math.Max(1, Model.CurrentPage - maxPagesToShow / 2);
-        int endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
-
-        // تعديل البداية إذا اقتربنا من النهاية
-        if (endPage - startPage < maxPagesToShow - 1)
-        {
-            startPage = Math.Max(1, endPage - maxPagesToShow + 1);
-        }
-    }
-
-    <nav>
-        <ul class="pagination justify-content-center">
-
-            <!-- زر السابق -->
-            <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-
-            @for (int i = startPage; i <= endPage; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
-                </li>
-            }
-
-            <!-- زر التالي -->
-            <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-
-
-</div>
-
-<div class="modal fade" id="deletDepartment">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form asp-action="Delete" method="post" style="display:inline;">
-                <input name="Id" hidden />
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete Alert !!</h5>
+    <!-- Modal: Error -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border border-danger shadow-sm">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="errorModalLabel">❗ Deletion Error</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p>Are you sure to delete this Stor?</p>
+                <div class="modal-body text-center">
+                    <p class="text-danger fw-bold" id="errorModalMessage">@TempData["DeleteError"]</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-danger">Yes</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal لعرض الخطأ -->
-<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-danger">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="errorModalLabel">Deletion error</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="errorModalMessage">@TempData["DeleteError"]</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
-</div>
 
-@section Scripts{
-    <script>
-                // فتح مودال الحذف
-        $('.btnDelete').click(function (e) {
-            e.preventDefault();
-            const id = $(this).data('id');
-            $('#deletDepartment input[name="Id"]').val(id);
-            $('#deletDepartment').modal('show');
-        });
+    <!-- Modal: General Message -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-sm">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p id="modalMessage" class="fs-6 text-dark"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        $(document).ready(function () {
-            var errorMessage = '@TempData["DeleteError"]';
-            if (errorMessage && errorMessage.trim() !== "") {
-                var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                errorModal.show();
-            }
-        });
-    </script>
+    <!-- Scripts Section -->
+@section Scripts {
+        <script>
+            $(document).ready(function () {
+                // Show delete modal and inject product ID
+                $('.btnDelete').click(function (e) {
+                    e.preventDefault();
+                    const id = $(this).data('id');
+                    $('#deleteProduct input[name="Id"]').val(id);
+                    new bootstrap.Modal(document.getElementById('deleteProduct')).show();
+                });
+
+            // Show import modal
+            $('.btnImportExcel').click(function () {
+                const importModal =  new bootstrap.Modal(document.getElementById('ImportExcel'));
+                importModal.show();
+
+                            $('#ImportExcel').on('hidden.bs.modal', function () {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                        $('body').css('padding-right', '');
+                    });
+            });
+
+
+                // Show error modal if error exists
+                const errorMessage = '@TempData["DeleteError"]';
+                if (errorMessage && errorMessage.trim() !== "") {
+                    new bootstrap.Modal(document.getElementById('errorModal')).show();
+                }
+
+                // Show general message modal
+                const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+                const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+                const message = success || error;
+                if (message && message.trim() !== "") {
+                    $('#modalMessage').text(message);
+                    new bootstrap.Modal(document.getElementById('messageModal')).show();
+                }
+            });
+        </script>
 }
-                            
+

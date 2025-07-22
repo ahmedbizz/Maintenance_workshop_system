@@ -4,30 +4,32 @@
     ViewData["Title"] = "Create Role";
 }
 
-
-<div class="modal fade" id="CreateRole">
-
+<!-- Modal -->
+<div class="modal fade" id="CreateRole" tabindex="-1" aria-labelledby="CreateRoleLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content shadow-lg rounded-3">
             <form asp-action="CreateRole" id="RoleForm" method="post">
-                <div class="modal-header">
-                    <h4>Create Role</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="CreateRoleLabel">Create New Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="roleName">Role Name</label>
-                        <input type="text" name="roleName" class="form-control" placeholder="Enter role name" />
+                    <div class="mb-3">
+                        <label for="Name" class="form-label">Role Name</label>
+                        <input type="text" id="roleName" name="Name" class="form-control" placeholder="Enter role name" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
                 </div>
+
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-
+                    <button type="submit" class="btn btn-success w-100">Save</button>
+                    <button type="button" class="btn btn-secondary w-100 mt-2" data-bs-dismiss="modal">Close</button>
                 </div>
-                <div asp-validation-summary="All"></div>
-            </form>
 
+                <div asp-validation-summary="All" class="text-danger mt-2"></div>
+            </form>
         </div>
     </div>
 </div>
@@ -35,4 +37,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

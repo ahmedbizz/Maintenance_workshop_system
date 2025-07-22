@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using WorkShop.Context;
 using WorkShop.Enums;
 using WorkShop.Models;
@@ -20,149 +21,195 @@ namespace WorkShop.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogService _logService;
         private readonly INotificationService _notificationService;
-        public StoreController(IUnitOfWork unitOfWork, UserManager<User> userManager, ILogService logService, INotificationService notificationService)
+        private readonly ILogger<StoreController> _logger;
+        public StoreController(IUnitOfWork unitOfWork, UserManager<User> userManager, ILogService logService, INotificationService notificationService , ILogger<StoreController> logger)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _logService = logService;
             _notificationService = notificationService;
+            _logger = logger;
         }
 
 
        
         public  async Task<IActionResult> Index(string? searchTerm , int page =1)
         {
-            var curentUser = await _userManager.Users
+            try
+            {
+                var curentUser = await _userManager.Users
                 .Include(u => u.UserDepartments)
                 .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
-            List<Store> query;
-            var pageSize = 10;
-            if (isAdmin)
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                    _unitOfWork.stores.FindAll("department").ToList() :
-                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm)).ToList();
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<Store> query;
+                var pageSize = 10;
+                if (isAdmin)
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                        _unitOfWork.stores.FindAll("department").ToList() :
+                        _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm)).ToList();
+                }
+                else
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                        _unitOfWork.stores.FindAll("department").Where(s => userDepartmentIds.Contains(s.DepartmentId)).ToList() :
+                        _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm) && userDepartmentIds.Contains(s.DepartmentId)).ToList();
+
+                }
+                var strors = query.ToList();
+                var total = strors.Count;
+                var paged = strors.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                var viewModel = new StoreViewModel
+                {
+                    stors = paged,
+                    CurrentPage = page,
+                    searchTerm = searchTerm,
+                    TotalPages = (int)Math.Ceiling((double)total / pageSize)
+                };
+
+
+                return View(viewModel);
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error in Index method");
+                TempData["Error"] = "Can't loading Error hapen.";
+                return RedirectToAction("Index","Home");
+            
             }
-            else
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                    _unitOfWork.stores.FindAll("department").Where(s => userDepartmentIds.Contains(s.DepartmentId)).ToList() :
-                    _unitOfWork.stores.FindAll("department").Where(s => s.Name.Contains(searchTerm) && userDepartmentIds.Contains(s.DepartmentId)).ToList();
 
-            }
-            var strors = query.ToList();
-            var total = strors.Count;
-            var paged = strors.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var viewModel = new StoreViewModel
-            {
-                stors = paged,
-                CurrentPage = page,
-                searchTerm = searchTerm,
-                TotalPages = (int)Math.Ceiling((double)total / pageSize)
-            };
-
-
-            return View(viewModel);
         }
 
         public IActionResult Details(int? Id,int page = 1)
         {
-            if (Id == null)
+            try
             {
-                TempData["Error"] = "❌ Store ID is required.";
-                return RedirectToAction("Index", "Store");
+                if (Id == null)
+                {
+                    TempData["Error"] = "❌ Store ID is required.";
+                    return RedirectToAction("Index", "Store");
+                }
+                var pageSize = 10;
+                var store = _unitOfWork.stores.FindById(Id);
+                if (store == null)
+                {
+                    TempData["Error"] = "❌ Store not found.";
+                    return RedirectToAction("Index", "Store");
+                }
+
+                var products = _unitOfWork.productStoks.FindAll("product").Where(p => p.storeId == Id).ToList();
+                var total = products.Count;
+                var paged = products.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var ViewModel = new StoreDetailsViewModel
+                {
+                    store = store.Name,
+                    products = paged,
+                    TotalPages = (int)Math.Ceiling((double)total / pageSize),
+                    CurrentPage = page
+
+                };
+
+                return View(ViewModel);
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in Details method");
+                TempData["Error"] = "Can't loading Error hapen.";
+                return RedirectToAction("Index");
             }
-            var pageSize = 10;
-            var store = _unitOfWork.stores.FindById(Id);
-            if (store == null)
-            {
-                TempData["Error"] = "❌ Store not found.";
-                return RedirectToAction("Index", "Store");
-            }
 
-            var products = _unitOfWork.productStoks.FindAll("product").Where(p => p.storeId == Id).ToList();
-            var total = products.Count;
-            var paged = products.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            var ViewModel = new StoreDetailsViewModel
-            {
-                store = store.Name,
-                products = paged,
-                TotalPages = (int)Math.Ceiling((double)total / pageSize),
-                CurrentPage =page
-
-            };
-
-            return View(ViewModel);
         }
 
         [HttpGet]
         [Authorize(Roles = Roles.Engineer +","+Roles.Admin)]
         public async Task <IActionResult> Create(int? Id) {
-            var curentUser = await _userManager.Users
+
+            try
+            {
+                var curentUser = await _userManager.Users
                 .Include(u => u.UserDepartments)
                 .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User)); ;
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser,Roles.Admin);
-            List<Department> departments;
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<Department> departments;
 
 
-            if (isAdmin)
-            {
-                departments = _unitOfWork.departments.FindAll().ToList();
+                if (isAdmin)
+                {
+                    departments = _unitOfWork.departments.FindAll().ToList();
+                }
+                else
+                {
+                    departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
+                }
+                ViewBag.Departments = new SelectList(departments, "Id", "Name");
+                if (Id == null || Id == 0)
+                {
+                    return View();
+                }
+                else
+                {
+                    return View(_unitOfWork.stores.FindById(Id));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
+                _logger.LogError(ex, "Error in Create method");
+                TempData["Error"] = "Can't loading Error hapen.";
+                return RedirectToAction("Index");
             }
-            ViewBag.Departments = new SelectList(departments, "Id", "Name");
-            if (Id == null || Id == 0)
-            {
-                return View();
-            }
-            else
-            {
-                return View(_unitOfWork.stores.FindById(Id));
-            }
-    
+
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.Engineer + "," + Roles.Admin)]
-        public IActionResult Create(Store store) {
-            ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
-            if (ModelState.IsValid) { 
-                if(store.Id == 0)
-  
+        public async Task<IActionResult> Create(Store store) {
+
+            try
+            {
+                ViewBag.Departments = new SelectList(_unitOfWork.departments.FindAll(), "Id", "Name");
+                if (ModelState.IsValid)
                 {
-                    store.CreateAt = DateTime.Now;
-                    store.UpdateAt = DateTime.Now;
-                    _unitOfWork.stores.Insert(store);
+                    if (store.Id == 0)
+
+                    {
+                        store.CreateAt = DateTime.Now;
+                        store.UpdateAt = DateTime.Now;
+                        _unitOfWork.stores.Insert(store);
+                        TempData["Success"] = "Created successfully.";
+                    }
+                    else
+                    {
+                        var existingStore = _unitOfWork.stores.FindById(store.Id);
+                        if (existingStore == null)
+                        {
+                            return NotFound();
+                        }
+                        existingStore.Name = store.Name;
+                        existingStore.DepartmentId = store.DepartmentId;
+                        existingStore.Location = store.Location;
+                        existingStore.UpdateAt = DateTime.Now;
+                        _unitOfWork.stores.Update(existingStore);
+                        TempData["Success"] = "Update successfully.";
+
+                    }
+                    await _unitOfWork.CompleteAsync();
+                    return RedirectToAction("Index");
+
                 }
                 else
                 {
-                    var existingStore = _unitOfWork.stores.FindById(store.Id);
-                    if (existingStore == null)
-                    {
-                        return NotFound();
-                    }
-                    existingStore.Name = store.Name;
-                    existingStore.DepartmentId = store.DepartmentId;
-                    existingStore.Location = store.Location;
-                    existingStore.UpdateAt = DateTime.Now;
-                    _unitOfWork.stores.Update(existingStore);
+
+
+                    return View(store);
                 }
-
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in Index method");
+                TempData["Error"] = "Can't loading Error hapen.";
                 return RedirectToAction("Index");
-            
-            } else {
-
-
-                return View(store);
             }
+
 
 
         }
@@ -174,12 +221,13 @@ namespace WorkShop.Controllers
             var store = _unitOfWork.stores.FindById(id);
             if (store == null)
             {
-                return NotFound();
-            }
+                    TempData["Error"] = "❌ Store ID is required.";
+                    return RedirectToAction("Index", "Store");
+                }
 
             _unitOfWork.stores.Delete(store.Id);
-
-            return RedirectToAction("Index");
+                TempData["Success"] = "Delete successfully.";
+                return RedirectToAction("Index");
             }
             catch (DbUpdateException dbEx)
             {
@@ -219,85 +267,95 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.StoreKeeper)]
         public async Task<IActionResult> PendingDeliveries(int RequestId)
         {
-            var request = _unitOfWork.sparePartRequests.FindAll("Items.Product")
+            try
+            {
+                var request = _unitOfWork.sparePartRequests.FindAll("Items.Product")
                             .FirstOrDefault(r => r.Id == RequestId);
-            if (request == null)
-            {
-                return NotFound();
-            }
-
-            foreach (var item in request.Items)
-            {
-                var product = _unitOfWork.productStoks.FindAll().SingleOrDefault(p => p.productId == item.ProductId && p.storeId == item.StoreId);
-                if (product == null || product.quantity < item.Quantity)
+                if (request == null)
                 {
-                    TempData["Massege"] = "Parts not available in store";
-                    return RedirectToAction("PendingDeliveries");
-
+                    TempData["Error"] = "❌ request not found.";
+                    return RedirectToAction("PendingDeliveries", "Store");
                 }
 
-                product.quantity -= item.Quantity;
+                foreach (var item in request.Items)
+                {
+                    var product = _unitOfWork.productStoks.FindAll().SingleOrDefault(p => p.productId == item.ProductId && p.storeId == item.StoreId);
+                    if (product == null || product.quantity < item.Quantity)
+                    {
+                        TempData["Error"] = "Parts not available in store";
+                        return RedirectToAction("PendingDeliveries");
 
-            }//end for ech
+                    }
 
-            request.Status = MaintenanceStatus.Delivered.ToString();
-            request.IsFinalized = true;
-            var StoreKeeper = await _userManager.GetUserAsync(User);
-            var device = _unitOfWork.devices.FindById(request.DeviceId);
-            if (device == null)
-            {
-                return NotFound("Device not found.");
+                    product.quantity -= item.Quantity;
+
+                }//end for ech
+
+                request.Status = MaintenanceStatus.Delivered.ToString();
+                request.IsFinalized = true;
+                var StoreKeeper = await _userManager.GetUserAsync(User);
+                var device = _unitOfWork.devices.FindById(request.DeviceId);
+                if (device == null)
+                {
+                    return NotFound("Device not found.");
+                }
+
+                var engnieers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
+                var engineer = engnieers.FirstOrDefault(e => e.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId));
+
+                var Officers = await _userManager.GetUsersInRoleAsync(Roles.Officer);
+                var DepartmentOfficers = Officers.Where(o => o.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId)).ToList();
+
+
+                // سجل الحدث
+                await _logService.LogAsync(
+                    device.Id,
+                    "Spare parts have been dispensed.",
+                    $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}",
+                    MaintenanceStatus.Delivered.ToString(),
+                   "Spare parts have been dispensed.",
+                    Roles.StoreKeeper,
+                    StoreKeeper.Id);
+
+                // إشعار الهندس
+                await _notificationService.NotifyUsersAsync(
+                       request.ManagerId,
+                      "Spare Parts Approved",
+                       $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
+                      $"for device S/N: {request.Device.SerialNumber}",
+                       request.Device.Id
+                      );
+                // إشعار الفني
+                await _notificationService.NotifyUsersAsync(
+                      request.RequestedById,
+                      "Spare Parts Approved",
+                      $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
+                      $"for device S/N: {request.Device.SerialNumber}",
+                       request.Device.Id
+                      );
+                // إشعار الادارة 
+                await _notificationService.NotifyUsersAsync(
+                      DepartmentOfficers,
+                      "Spare Parts Disbursement",
+                      $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
+                      $"for device S/N: {request.Device.SerialNumber}",
+                       request.Device.Id
+                      );
+
+
+
+                await _unitOfWork.CompleteAsync();
+
+                TempData["Success"] = "Spare Parts Disbursement successfully";
+
+                return RedirectToAction("PendingDeliveries");
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error in PendingDeliveries method");
+                TempData["Error"] = "Can't loading Error hapen.";
+                return RedirectToAction("Index");
             }
-  
-            var engnieers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
-            var engineer = engnieers.FirstOrDefault(e => e.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId));
-
-            var Officers = await _userManager.GetUsersInRoleAsync(Roles.Officer);
-            var DepartmentOfficers = Officers.Where(o => o.UserDepartments.Any(u => u.DepartmentId == device.DepartmentId)).ToList();
-
-
-            // سجل الحدث
-            await _logService.LogAsync(
-                device.Id,
-                "Spare parts have been dispensed.",
-                $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}",
-                MaintenanceStatus.Delivered.ToString(),
-               "Spare parts have been dispensed.",
-                Roles.StoreKeeper,
-                StoreKeeper.Id);
-
-            // إشعار الهندس
-            await _notificationService.NotifyUsersAsync(
-                   request.ManagerId,
-                  "Spare Parts Approved",
-                   $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
-                  $"for device S/N: {request.Device.SerialNumber}",
-                   request.Device.Id
-                  );
-            // إشعار الفني
-            await _notificationService.NotifyUsersAsync(
-                  request.RequestedById,
-                  "Spare Parts Approved",
-                  $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
-                  $"for device S/N: {request.Device.SerialNumber}",
-                   request.Device.Id
-                  );
-            // إشعار الادارة 
-            await _notificationService.NotifyUsersAsync(
-                  DepartmentOfficers,
-                  "Spare Parts Disbursement",
-                  $"Spare parts have been dispensed form stor By {new string(StoreKeeper.FullName.Take(10).ToArray())}" +
-                  $"for device S/N: {request.Device.SerialNumber}",
-                   request.Device.Id
-                  );
-
             
-
-            await _unitOfWork.CompleteAsync();
-
-            TempData["Success"] = "Spare Parts Disbursement successfully";
-
-            return RedirectToAction("PendingDeliveries");
+ 
         }
     }
 }

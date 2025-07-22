@@ -31,45 +31,52 @@ namespace WorkShop.Controllers
         private readonly UserManager<User> _userManager;
         public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var curentUser = await _userManager.Users
-                .Include(u => u.UserDepartments)
-                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
-            List<Product> query;
-            var pageSize = 10;
-            if (isAdmin)
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                _unitOfWork.products.FindAll("department").ToList():
-                _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
+            try {
+                var curentUser = await _userManager.Users
+                        .Include(u => u.UserDepartments)
+                        .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<Product> query;
+                var pageSize = 10;
+                if (isAdmin)
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                            _unitOfWork.products.FindAll("department").ToList() :
+                            _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
+                        }
+                else
+                {
+                    query = string.IsNullOrEmpty(searchTerm) ?
+                            _unitOfWork.products.FindAll("department").Where(p => userDepartmentIds.Contains(p.DepartmentId)).ToList() :
+                            _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
+
+
+
+                }
+
+
+                int totalItems = query.Count();
+
+                var products = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var viewModel = new ProductListViewModel
+                {
+                    Products = products,
+                    SearchTerm = searchTerm,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+                };
+                return View(viewModel);
+            } catch (Exception ex) {
+                TempData["Error"] = "Error when loading products.";
+                return RedirectToAction("Index");
+            
             }
-            else
-            {
-                query = string.IsNullOrEmpty(searchTerm) ?
-                        _unitOfWork.products.FindAll("department").Where(p =>userDepartmentIds.Contains(p.DepartmentId)).ToList() :
-                        _unitOfWork.products.SearchBycondition(p => p.Name.Contains(searchTerm) || p.PartNumber.Contains(searchTerm), "department").ToList();
-              
 
-
-            }
-          
-             
-            int totalItems = query.Count();
-
-            var products = query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var viewModel = new ProductListViewModel
-            {
-                Products = products,
-                SearchTerm = searchTerm,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
-            };
-            return View(viewModel);
         }
 
         public IActionResult Details(int? Id)
@@ -79,32 +86,39 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
+
         public async Task<IActionResult> Create(int? Id)
         {
+            try
+            {
+                var curentUser = await _userManager.GetUserAsync(User);
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<Department> departments;
 
-            var curentUser = await _userManager.GetUserAsync(User);
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
-            List<Department> departments;
 
+                if (isAdmin)
+                {
+                    departments = _unitOfWork.departments.FindAll().ToList();
+                }
+                else
+                {
+                    departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
+                }
+                ViewBag.Departments = new SelectList(departments, "Id", "Name");
+                if (Id == null || Id == 0)
+                {
+                    return View();
+                }
+                else
+                {
+                    return View(_unitOfWork.products.FindById(Id));
+                }
+            } catch (Exception ex) {
+                TempData["Error"] = "Can't loade this page create product Error hapen.";
+                return RedirectToAction("Index");
+            }
 
-            if (isAdmin)
-            {
-                departments = _unitOfWork.departments.FindAll().ToList();
-            }
-            else
-            {
-                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
-            }
-            ViewBag.Departments = new SelectList(departments, "Id", "Name");
-            if (Id == null || Id == 0)
-            {
-                return View();
-            }
-            else
-            {
-                return View(_unitOfWork.products.FindById(Id));
-            }
 
         }
 
@@ -112,82 +126,101 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Product product)
         {
-            var curentUser = await _userManager.GetUserAsync(User);
-            var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-            var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
-            List<Department> departments;
+            try {
+                var curentUser = await _userManager.GetUserAsync(User);
+                var userDepartmentIds = curentUser.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var isAdmin = await _userManager.IsInRoleAsync(curentUser, Roles.Admin);
+                List<Department> departments;
 
 
-            if (isAdmin)
-            {
-                departments = _unitOfWork.departments.FindAll().ToList();
-            }
-            else
-            {
-                departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
-            }
-            ViewBag.Departments = new SelectList(departments, "Id", "Name");
-            if (ModelState.IsValid)
-            {
-                if (product.Id == 0)
-
+                if (isAdmin)
                 {
-                    string filename = string.Empty;
-                    if(product.clientFile != null)
-                    {
-                        string Upload = Path.Combine(_environment.WebRootPath, "images");
-                        filename = product.clientFile.FileName;
-                        string FullPath = Path.Combine(Upload,filename);
-                        using (var strem = new FileStream(FullPath, FileMode.Create))
-                        {
-                            product.clientFile.CopyTo(strem);
-                        }
-                        
-                        product.imagePath = filename;
-                    }
-
-
-                    product.CreateAt = DateTime.Now;
-                    product.UpdateAt = DateTime.Now;
-                    _unitOfWork.products.Insert(product);
+                    departments = _unitOfWork.departments.FindAll().ToList();
                 }
                 else
                 {
-                    var existingProduct = _unitOfWork.products.FindById(product.Id);
-                    if (existingProduct == null)
-                    {
-                        return NotFound();
-                    }
-                    string filename = string.Empty;
-                    if (product.clientFile != null)
-                    {
-                        string Upload = Path.Combine(_environment.WebRootPath, "images");
-                        filename = product.clientFile.FileName;
-                        string FullPath = Path.Combine(Upload, filename);
-                        using (var strem = new FileStream(FullPath, FileMode.Create))
-                        {
-                            product.clientFile.CopyTo(strem);
-                        }
-                        existingProduct.imagePath = filename;
-                    }
-                    existingProduct.Name = product.Name;
-                    existingProduct.PartNumber = product.PartNumber;
-                    existingProduct.Desc = product.Desc;
-                    existingProduct.DepartmentId = product.DepartmentId;
-                  
-                    existingProduct.UpdateAt = DateTime.Now;
-                    _unitOfWork.products.Update(existingProduct);
+                    departments = _unitOfWork.departments.FindAll().Where(d => userDepartmentIds.Contains(d.Id)).ToList();
                 }
+                ViewBag.Departments = new SelectList(departments, "Id", "Name");
+                if (ModelState.IsValid)
+                {
+                    if (product.Id == 0)
 
+                    {
+                        string filename = string.Empty;
+                        if (product.clientFile != null)
+                        {
+                            string Upload = Path.Combine(_environment.WebRootPath, "images");
+                            filename = product.clientFile.FileName;
+                            string FullPath = Path.Combine(Upload, filename);
+                            using (var strem = new FileStream(FullPath, FileMode.Create))
+                            {
+                                product.clientFile.CopyTo(strem);
+                            }
+
+                            product.imagePath = filename;
+                        }
+
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        if (product.clientFile != null)
+                        {
+                            var extension = Path.GetExtension(product.clientFile.FileName).ToLower();
+                            if (!allowedExtensions.Contains(extension))
+                            {
+                                ModelState.AddModelError("", "Only image files are allowed.");
+                                return View(product);
+                            }
+                        }
+
+                        product.CreateAt = DateTime.Now;
+                        product.UpdateAt = DateTime.Now;
+                        _unitOfWork.products.Insert(product);
+                    }
+                    else
+                    {
+                        var existingProduct = _unitOfWork.products.FindById(product.Id);
+                        if (existingProduct == null)
+                        {
+                            TempData["Error"] = "An error occurred while creating the product.";
+                            return RedirectToAction("Index");
+                        }
+                        string filename = string.Empty;
+                        if (product.clientFile != null)
+                        {
+                            string Upload = Path.Combine(_environment.WebRootPath, "images");
+                            filename = product.clientFile.FileName;
+                            string FullPath = Path.Combine(Upload, filename);
+                            using (var strem = new FileStream(FullPath, FileMode.Create))
+                            {
+                                product.clientFile.CopyTo(strem);
+                            }
+                            existingProduct.imagePath = filename;
+                        }
+                        existingProduct.Name = product.Name;
+                        existingProduct.PartNumber = product.PartNumber;
+                        existingProduct.Desc = product.Desc;
+                        existingProduct.DepartmentId = product.DepartmentId;
+
+                        existingProduct.UpdateAt = DateTime.Now;
+                        _unitOfWork.products.Update(existingProduct);
+                    }
+                    TempData["Success"] = "Created Successfully.";
+                    return RedirectToAction("Index");
+
+                }
+                else
+                {
+
+
+                    return View(product);
+                }
+            }
+            catch(Exception ex) {
+                TempData["Error"] = "An error occurred while creating the product.";
                 return RedirectToAction("Index");
-
+       
             }
-            else
-            {
-
-
-                return View(product);
-            }
+ 
 
 
         }
@@ -198,8 +231,9 @@ namespace WorkShop.Controllers
             var product = _unitOfWork.products.FindById(id);
             if (product == null)
             {
-                return NotFound();
-            }
+                    TempData["Error"] = "An error occurred while deleteing the product.";
+                    return RedirectToAction("Index");
+                }
 
             _unitOfWork.products.Delete(product.Id);
 

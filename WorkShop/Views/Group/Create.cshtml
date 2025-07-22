@@ -3,24 +3,38 @@
     ViewData["Title"] = "Create Group";
 }
 
-<h2>Create Group</h2>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">@ViewData["Title"] User</h4>
+                </div>
+                <div class="card-body p-4">
 
-<form asp-action="Create" method="post" asp-controller="Group">
-    <input type="hidden" asp-for="Id" />
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+                    <form asp-action="Create" method="post" asp-controller="Group">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger m-1"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control"></textarea>
+                            <span  asp-validation-for="Description" class="text-danger m-1"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a asp-action="Index" asp-controller="Group" class="btn btn-danger ">Back</a>
+                         <div class="m-3" asp-validation-summary="All"></div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Index" asp-controller="Group" class="btn btn-danger ">Back</a>
-</form>
-<div asp-validation-summary="All"></div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

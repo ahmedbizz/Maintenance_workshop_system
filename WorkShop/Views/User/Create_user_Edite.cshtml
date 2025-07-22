@@ -3,113 +3,105 @@
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
 @model User
+
 @{
     ViewData["Title"] = "Create";
-}
-@{
     var currentUser = UserManager.GetUserAsync(User).Result;
-
 }
 
-<div class="container p-4">
-
-
-    <div class="flex-column  ">
-
-
-
-
-        <form method="post" asp-controller="User" asp-action="Create_user_Edite" enctype="multipart/form-data" >
-            <div class="border p-3 mt4">
-
-
-                <div class="mb-3 text-center">
-
-                    <input id="imageInput" type="file" asp-for="clientFile" class="form-control" hidden onchange="loadFile(event)" />
-                    <br />
-                    <img class=" shadow  " id="proImg" src="@(Model?.imagePath != null ? Url.Content("~/images/" + Model.imagePath) : Url.Content("~/images/user.png"))"
-                         height="150px" class="img-thumbnail mt-2"
-                         style="cursor: pointer;border-radius:150px"
-                         onclick="document.getElementById('imageInput').click();" />
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">@ViewData["Title"] User</h4>
                 </div>
-                <div class=" mb-3">
-                    <label asp-for="FullName"></label>
-                    <input asp-for="FullName" class="form-control" />
-                    <span asp-validation-for="FullName" class="text-danger"></span>
+                <div class="card-body p-4">
+                    <form method="post" asp-controller="User" asp-action="Create_user_Edite" enctype="multipart/form-data">
+                        <div class="text-center mb-4">
+                            <input id="imageInput" type="file" asp-for="clientFile" hidden onchange="loadFile(event)" />
+                            <img id="proImg"
+                                 src="@(Model?.imagePath != null ? Url.Content("~/images/" + Model.imagePath) : Url.Content("~/images/user.png"))"
+                                 height="150"
+                                 class="rounded-circle shadow-sm"
+                                 style="cursor: pointer;"
+                                 onclick="document.getElementById('imageInput').click();" />
+                            <p class="text-muted mt-2">Click the image to change</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            @if (User.IsInRole(Roles.Admin))
+                            {
+                                <input asp-for="Email" class="form-control" />
+                            }
+                            else
+                            {
+                                <input asp-for="Email" class="form-control" readonly />
+                            }
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SelectedDepartmentIds" class="form-label">Departments</label>
+                            <select asp-for="SelectedDepartmentIds"
+                                    asp-items="ViewBag.Departments"
+                                    multiple
+                                    class="form-select select2-dropdown">
+                            </select>
+                            <span asp-validation-for="SelectedDepartmentIds" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success px-4 me-2">Save</button>
+
+                            @if (User.IsInRole(Roles.Admin))
+                            {
+                                <a asp-action="Index" asp-controller="User" class="btn btn-outline-primary px-4">Back</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Index" asp-controller="Home" class="btn btn-outline-primary px-4">Back</a>
+                            }
+                        </div>
+
+                        <div asp-validation-summary="All" class="text-danger mt-3"></div>
+                    </form>
                 </div>
-                  <div class=" mb-3">
-                        <label asp-for="Email"></label>
-                    @if (User.IsInRole(Roles.Admin))
-                    {
-                        <input asp-for="Email" class="form-control" />
-                    }
-                    else
-                    {
-                        <input asp-for="Email" class="form-control" readonly />
-                    }
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
-                <div class="mb-3">
-                    <label asp-for="SelectedDepartmentIds" class="form-label">Department</label>
-                    <select asp-for="SelectedDepartmentIds"
-                            asp-items="ViewBag.Departments"
-                            multiple
-                            class="form-control select2-dropdown">
-                    </select>
-                    <span asp-validation-for="SelectedDepartmentIds" class="text-danger"></span>
-                </div>
-                
-
-                <div class=" mb-3">
-                    <label asp-for="PhoneNumber"></label>
-                    <input asp-for="PhoneNumber" class="form-control" />
-                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                </div>
-
-
-
-                <div class="mb-3 text-center ">
-                    <button type="submit" class="btn btn-success" style="width:150px">Save</button>
-                    @if (User.IsInRole(Roles.Admin))
-                     {
-                        <a asp-action="Index" asp-controller="User" class="btn btn-primary" style="width:150px">Back</a>
-                    }
-                    else
-                    {
-                        <a asp-action="Index" asp-controller="Home" class="btn btn-primary" style="width:150px">Back</a>
-                    }
-                </div>
-
             </div>
-            <div asp-validation-summary="All"></div>
-        </form>
-
-
-
-
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        var loadFile = (event)=>{
+        var loadFile = (event) => {
             var reader = new FileReader();
-            reader.onload = ()=>{
-            var proImg  = document.getElementById('proImg');
-            proImg.src = reader.result;
-
+            reader.onload = () => {
+                document.getElementById('proImg').src = reader.result;
             }
             reader.readAsDataURL(event.target.files[0]);
         }
 
-                $(document).ready(function () {
+        $(document).ready(function () {
             $('.select2-dropdown').select2({
                 placeholder: "Select departments",
-                tags: true, // يضيف اختيارات كمربعات
+                tags: true,
                 width: '100%'
             });
         });
     </script>
 }
-

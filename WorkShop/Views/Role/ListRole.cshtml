@@ -1,47 +1,71 @@
 ﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole>
 @using Microsoft.AspNetCore.Identity
+
 @{
     ViewData["Title"] = "Roles List";
+    var counter = 1;
 }
-<div class="d-flex justify-content-between m-4">
-    <h2>Roles List</h2>
-    <button type="button" class="btn btn-success btnCreateRole" data-bs-toggle="modal"
-            data-bs-target="#CreateRole"
-         >
-        <i class="bi bi-plus-lg"></i>Create Role
-    </button>
+@using System.Text.Json
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 text-primary">
+            <i class="bi bi-shield-lock-fill me-2"></i> Roles Management
+        </h2>
+        <button type="button" class="btn btn-success btnCreateRole" data-bs-toggle="modal" data-bs-target="#CreateRole">
+            <i class="bi bi-plus-circle me-1"></i> Create Role
+        </button>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 60px;">#</th>
+                    <th>Role Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var role in Model)
+                {
+                    <tr>
+                        <td>@counter</td>
+                        <td class="fw-semibold">@role.Name</td>
+                    </tr>
+                    counter++;
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Role Name</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var role in Model)
-        {
-            <tr>
-                <td>@role.Id</td>
-                <td>@role.Name</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<!-- Message Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-sm">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Partial -->
 @await Html.PartialAsync("_CreateRole", new IdentityRole())
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        // فتح مودال الإنشاء
+        // فتح نافذة إنشاء الدور
         $('.btnCreateRole').click(() => {
             $('#CreateRole').modal('show');
         });
 
-
-                // الحفظ عبر ajax
+        // إرسال النموذج عبر AJAX
         $(document).on('submit', '#RoleForm', function (e) {
             e.preventDefault();
             const form = $(this);
@@ -49,18 +73,27 @@
             const formData = form.serialize();
 
             $.post(url, formData)
-            .done(function (result) {
-               if (result.success) {
-                 $('.modal').modal('hide');
-                  setTimeout(() => {
-                  location.reload();
-                  }, 300);
+                .done(function (result) {
+                    if (result.success) {
+                        $('.modal').modal('hide');
+                        setTimeout(() => { location.reload(); }, 300);
                     } else {
-                          $('#CreateRole .modal-content').html($(result).find('.modal-content').html());
-                          $('#CreateRole').modal('show');
-                                          
-                          }
-                      });
-                  });
-        </script>
+                        $('#CreateRole .modal-content').html($(result).find('.modal-content').html());
+                        $('#CreateRole').modal('show');
+                    }
+                });
+        });
+
+        $(document).ready(function () {
+            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+
+            let message = success || error;
+            if (message && message.trim() !== "") {
+                $('#modalMessage').text(message);
+                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+                modal.show();
+            }
+        });
+    </script>
 }

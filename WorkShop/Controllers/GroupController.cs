@@ -16,13 +16,18 @@ namespace WorkShop.Controllers
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<GroupController> _logger;
 
-
-        public GroupController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IUnitOfWork unitOfWork)
+        public GroupController(
+            UserManager<User> userManager,
+            RoleManager<IdentityRole> roleManager,
+            IUnitOfWork unitOfWork,
+            ILogger<GroupController> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
 
@@ -42,21 +47,30 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-
-        public async Task<IActionResult> Create(int? Id)
+        public IActionResult Create(int? Id)
         {
-            var existingGroup = _unitOfWork.groups.FindById(Id);
+            try
+            {
+                var existingGroup = _unitOfWork.groups.FindById(Id);
                 if (existingGroup != null)
                 {
-                var model = new CreateGroupViewModel
-                {
-                    Id = existingGroup.Id,
-                    Name = existingGroup.Name,
-                    Description = existingGroup.Description
-                };
+                    var model = new CreateGroupViewModel
+                    {
+                        Id = existingGroup.Id,
+                        Name = existingGroup.Name,
+                        Description = existingGroup.Description
+                    };
                     return View(model);
                 }
-            return View();
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get Erorr Create");
+                TempData["Massege"] = "Somthing Was Erorr!.";
+                return RedirectToAction("Index");
+            }
+
             
         }
 
@@ -65,19 +79,21 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateGroupViewModel? model)
         {
-         
-            var existingGroup = _unitOfWork.groups.FindById(model.Id);
-            if (!ModelState.IsValid)
-            { 
-                return View(model); }
-
+            try
+            {
+                
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
+                var existingGroup = _unitOfWork.groups.FindById(model.Id);
                 if (existingGroup != null)
                 {
                     // Update existing group
                     existingGroup.Name = model.Name;
                     existingGroup.Description = model.Description;
                     _unitOfWork.groups.Update(existingGroup);
-              
+
                 }
                 else
                 {
@@ -86,12 +102,21 @@ namespace WorkShop.Controllers
                         Name = model.Name,
                         Description = model.Description
                     };
-                     await _unitOfWork.groups.AddAsync(Group);
+                    await _unitOfWork.groups.AddAsync(Group);
                 }
-      
-               
+
+
                 await _unitOfWork.CompleteAsync();
+                TempData["Success"] = "New group created Successfully";
                 return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erorr Create Post");
+                TempData["Error"] = "Cannot create group somthing erorr.";
+                return RedirectToAction("Index");
+            }
+
        
         }
         [HttpPost]
@@ -99,20 +124,29 @@ namespace WorkShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int? Id)
         {
-            var group = _unitOfWork.groups.FindAll("UserGroups", "GroupRoles").
+            try
+            {
+                var group = _unitOfWork.groups.FindAll("UserGroups", "GroupRoles").
                 SingleOrDefault(g => g.Id == Id);
-            if (group == null)
-            {
-                return NotFound();
-            }
-            if(group.GroupRoles.Any() || group.UserGroups.Any())
-            {
-                TempData["Massege"] = "Cannot delete group with existing roles or users.";
+                if (group == null)
+                {
+                    TempData["Error"] = "Cannot found group if existing .";
+                    return RedirectToAction("Index");
+                }
+                if (group.GroupRoles.Any() || group.UserGroups.Any())
+                {
+                    TempData["Massege"] = "Cannot delete group with existing roles or users.";
+                    return RedirectToAction("Index");
+                }
+                _unitOfWork.groups.Delete(group);
+                await _unitOfWork.CompleteAsync();
+                return RedirectToAction("Index");
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Get Erorr Delete");
+                TempData["Massege"] = $"{ex.Message}.";
                 return RedirectToAction("Index");
             }
-            _unitOfWork.groups.Delete(group);
-            await _unitOfWork.CompleteAsync();
-            return RedirectToAction("Index");
+
         }
 
         [HttpGet]
@@ -123,13 +157,15 @@ namespace WorkShop.Controllers
 
             if (Id == null)
             {
-                return NotFound();
+                TempData["Error"] = "Cannot found Id if existing .";
+                return RedirectToAction("Index");
             }
             var group = _unitOfWork.groups.FindAll("GroupRoles").
                                            SingleOrDefault(g => g.Id == Id);
             if (group == null)
             {
-                return NotFound();
+                TempData["Error"] = "Cannot found group if existing .";
+                return RedirectToAction("Index");
             }
 
             int pageSize = 10;
@@ -169,7 +205,8 @@ namespace WorkShop.Controllers
                                     SingleOrDefault(g => g.Id == Id);
                 if (group == null)
                 {
-                    return NotFound();
+                    TempData["Error"] = "Cannot found group if existing .";
+                    return RedirectToAction("Index");
                 }
                 if (group.GroupRoles.Any())
                 {
@@ -207,6 +244,7 @@ namespace WorkShop.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Get Erorr AssignRoles");
                 TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
                 return View("Index");
             }
@@ -219,13 +257,15 @@ namespace WorkShop.Controllers
 
             if (Id == null)
             {
-                return NotFound();
+                TempData["Error"] = "Cannot found ID if existing .";
+                return RedirectToAction("Index");
             }
             var group = _unitOfWork.groups.FindAll("UserGroups")
                         .SingleOrDefault(g => g.Id == Id);
             if (group == null)
             {
-                return NotFound();
+                TempData["Error"] = "Cannot found group if existing .";
+                return RedirectToAction("Index");
             }
 
             int pageSize = 10;
@@ -264,7 +304,8 @@ namespace WorkShop.Controllers
                                 SingleOrDefault(g => g.Id == Id);
             if (group == null)
             {
-                return NotFound();
+                TempData["Error"] = "Cannot found group if existing .";
+                return RedirectToAction("Index");
             }
             if (group.UserGroups.Any())
             {
@@ -275,7 +316,7 @@ namespace WorkShop.Controllers
                 }
             }
             // Assign new User
-            // Assign new User
+ 
             foreach (var userName in model.UserNames)
             {
                 var user = await _userManager.FindByIdAsync(userName);
@@ -315,28 +356,17 @@ namespace WorkShop.Controllers
 
                 var toRemove = currentRols.Except(RolsfromGroup).ToList();
 
-                if (toRemove.Any())
-                {
-                    foreach (var item in toRemove)
-                    {
-                        await _userManager.RemoveFromRoleAsync(user, item);
-                    }
-
-                }
-
                 // To add Roles 
                 var toAdd = RolsfromGroup.Except(currentRols).ToList();
-                if (toAdd.Any())
-                {
-                    foreach (var item in toAdd)
-                    {
-                        await _userManager.AddToRoleAsync(user, item);
-                    }
 
-                }
+                await _userManager.RemoveFromRolesAsync(user, toRemove);
+                await _userManager.AddToRolesAsync(user, toAdd);
+
+
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Get Erorr AssignUsers");
                 TempData["DeleteError"] = $"An error occurred during the deletion process. {ex.Message}";
             }
         }

@@ -3,29 +3,74 @@
 @{
     ViewData["Title"] = "Users List";
 }
+@using System.Text.Json
+<div class="container my-4">
+    <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h4 class="mb-0">Users List</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Full Name</th>
+                        <th>Roles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.UserName</td>
+                            <td>@user.Email</td>
+                            <td>@user.FullName</td>
+                            <td>
+                                <a asp-action="MangamentUserRole" asp-route-userId="@user.Id"
+                                   class="btn btn-sm btn-outline-primary rounded-pill">
+                                    Manage Roles
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-<h2>Users List</h2>
+<!-- Message Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="messageModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6 mb-0"></p>
+            </div>
+        </div>
+    </div>
+</div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>UserName</th>
-            <th>Email</th>
-            <th>Full Name</th>
-            <th>Roles</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
-        {
-            <tr>
-                <td>@user.UserName</td>
-                <td>@user.Email</td>
-                <td>@user.FullName</td>
-                <td>
-                    <a asp-action="MangamentUserRole" asp-route-userId="@user.Id" class="btn btn-sm btn-outline-primary">Manage Roles</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            try {
+                var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
+                var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+                var message = success || error;
+
+                if (message && message.trim() !== "") {
+                    $('#modalMessage').text(message);
+                    var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+                    modal.show();
+                }
+            } catch (e) {
+                console.error("Error showing modal:", e);
+            }
+        });
+    </script>
+}
