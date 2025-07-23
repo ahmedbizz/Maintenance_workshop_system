@@ -7,13 +7,6 @@
 <div class="container mt-4">
     <h2 class="text-center text-primary mb-4"><i class="bi bi-wrench"></i> @ViewData["Title"]</h2>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
     <form asp-action="RecivedAdd" asp-controller="Device" method="post" class="card shadow p-4 rounded-3">
         <div class="row g-3">
@@ -66,7 +59,13 @@
                 </select>
                 <span asp-validation-for="EngineerId" class="text-danger small"></span>
             </div>
-
+            <div class="col-md-6">
+                <label asp-for="ErrorKeyword" class="form-label fw-semibold"></label>
+                <select asp-for="ErrorKeyword" asp-items="Model.ErrorKeywords" class="form-select">
+                    <option value="">--  Select ErrorKeyword --</option>
+                </select>
+                <span asp-validation-for="ErrorKeyword" class="text-danger small"></span>
+            </div>
             <div class="col-md-12">
                 <label asp-for="FaultDescription" class="form-label fw-semibold"></label>
                 <textarea asp-for="FaultDescription" class="form-control" rows="4"></textarea>
@@ -98,21 +97,36 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="messageSuccess" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="messageModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessageSuccess" class="fs-6 mb-0"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]));
+        const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]));
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+        if (error && error.trim() !== "") {
+            document.getElementById("modalMessage").textContent = error;
+            const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+            modal.show();
+        }
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
-            const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
-            const message = success || error;
+        if (success && success.trim() !== "") {
+            document.getElementById("modalMessageSuccess").textContent = success;
+            const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+            modal.show();
+        }
+    });
+</script>
 
-            if (message && message.trim() !== "") {
-                document.getElementById("modalMessage").textContent = message;
-                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
-                modal.show();
-            }
-        });
-    </script>
-}
+

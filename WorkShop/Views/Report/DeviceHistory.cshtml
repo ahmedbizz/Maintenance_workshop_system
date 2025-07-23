@@ -2,63 +2,82 @@
 @using WorkShop.Enums
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
-@{
-    ViewData["Title"] = "DeviceHistory";
-}
-
 
 @model List<MaintenanceCard>
 
-    <div class="container mt-4">
-        <h2 class="text-center mb-4">Maintenance Device History</h2>
+@{
+    ViewData["Title"] = "Device History";
+    string FormatDate(DateTime? date) => date?.ToString("yyyy-MM-dd hh:mm tt") ?? "N/A";
+}
 
-        @if (Model.Any())
-        {
-            <div class="row">
->
-                <div class="">
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Device</th>
-                                <th>Serial</th>
-                                <th>Status</th>
-                                <th>Technician</th>
-                                <th>AssignedToTechnicianAt</th>
-                                <th>Working Day</th>
-                                <th>Received At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model)
-                            {
-                            <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.Device.Status, departmentId = item.Device.DepartmentId })'" style="cursor:pointer">
-                                    <td>@item.Device.Product.Name</td>
-                                    <td>@item.Device.SerialNumber</td>
-                                    <td>@item.Status</td>
-                                <td>
-                                    @(string.IsNullOrWhiteSpace(item?.Device?.Technician?.FullName) ? "N/A" : item.Device.Technician.FullName)
-                                </td>
-                                      <td>@item.AssignedToTechnicianAt</td>
-                                <td>@{
-                                    var daysDifference = (item?.AssignedToTechnicianAt.HasValue == true)
-                                    ? (DateTime.Now - item.AssignedToTechnicianAt.Value).TotalDays
-                                    : (double?)null;
-                                }
-                                @(daysDifference.HasValue ? $"{Math.Floor(daysDifference.Value)} days ago" : "N/A")</td>
-                                    <td>@item.ReceivedAt.ToString("yyyy-MM-dd")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-warning text-center">No data found for this Device.</div>
-        }
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-clock-history me-2"></i>Maintenance Device History</h2>
+        <hr class="w-25 mx-auto border-primary" />
     </div>
 
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover shadow-sm border rounded">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th><i class="bi bi-cpu me-1"></i>Device</th>
+                        <th><i class="bi bi-upc me-1"></i>Serial</th>
+                        <th><i class="bi bi-info-circle me-1"></i>Status</th>
+                        <th><i class="bi bi-person-badge me-1"></i>Technician</th>
+                        <th><i class="bi bi-person-check me-1"></i>Assigned At</th>
+                        <th><i class="bi bi-calendar-check me-1"></i>Working Days</th>
+                        <th><i class="bi bi-calendar-event me-1"></i>Received At</th>
+                    </tr>
+                </thead>
+                <tbody class="text-center align-middle">
+                    @foreach (var item in Model)
+                    {
+                        string GetStatusColor(MaintenanceStatus s) => s switch
+                        {
+                            MaintenanceStatus.Pending => "secondary",
+                            MaintenanceStatus.AwaitingEngineer => "warning",
+                            MaintenanceStatus.ApprovedByEngineer => "primary",
+                            MaintenanceStatus.AwaitingOfficer => "info",
+                            MaintenanceStatus.ApprovedByOfficer => "success",
+                            MaintenanceStatus.RejectedByEngineer => "danger",
+                            MaintenanceStatus.RejectedByOfficer => "danger",
+                            MaintenanceStatus.Repaired => "success",
+                            MaintenanceStatus.Closed => "dark",
+                            _ => "secondary"
+                        };
 
-
+                        var workingDays = (item?.AssignedToTechnicianAt.HasValue == true)
+                        ? Math.Floor((DateTime.Now - item.AssignedToTechnicianAt.Value).TotalDays)
+                        : (double?)null;
+                        var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), item.Status ?? "New");
+                        <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.Device.Status, departmentId = item.Device.DepartmentId })'" style="cursor:pointer;">
+                            <td>@item.Device.Product.Name</td>
+                            <td>@item.Device.SerialNumber</td>
+                            <td>
+                                <span class="badge bg-@GetStatusColor(status) px-3 py-2 rounded-pill">
+                                    @status.ToString()
+                                </span>
+                            </td>
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item?.Device?.Technician?.FullName) ? "N/A" : item.Device.Technician.FullName)
+                            </td>
+                            <td>@FormatDate(item.AssignedToTechnicianAt)</td>
+                            <td>
+                                @(workingDays.HasValue ? $"{workingDays.Value} day(s)" : "N/A")
+                            </td>
+                            <td>@FormatDate(item.ReceivedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center shadow-sm">
+            <i class="bi bi-exclamation-circle me-2"></i>No data found for this Device.
+        </div>
+    }
+</div>

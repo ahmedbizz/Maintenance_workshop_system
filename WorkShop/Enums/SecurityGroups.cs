@@ -9,6 +9,7 @@
         Soldier,
         Technion,
         DeviceReceiver
+
     }
 
     public static class Roles

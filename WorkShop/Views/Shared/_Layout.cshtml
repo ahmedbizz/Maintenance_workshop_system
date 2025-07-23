@@ -128,6 +128,7 @@
                             @* Device Receiver *@
                             @if (User.IsInRole(Roles.DeviceReceiver))
                             {
+                           
                                 <li class="nav-item">
                                     <a class="nav-link nav-underline"
                                        asp-controller="Device"
@@ -139,7 +140,7 @@
                                     </a>
                                 </li>
                             }
-
+              
                             @* Officer *@
                             @if (User.IsInRole(Roles.Officer) )
                             {

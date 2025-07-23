@@ -1,15 +1,16 @@
 ﻿using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using NuGet.Packaging.Signing;
+using System.Data;
+using System.Text;
 using WorkShop.Enums;
+using WorkShop.Models;
 using WorkShop.Repository;
 using WorkShop.Repository.Base;
 using WorkShop.ViewModel;
-using System.Data;
-using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Data.SqlClient;
-using NuGet.Packaging.Signing;
 
 namespace WorkShop.Controllers
 {
@@ -70,19 +71,28 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> DeviceHistory(string? SN)
+        public async Task<IActionResult> DeviceHistory(string? SN,string? DepartmentId)
         {
-            if (string.IsNullOrEmpty(SN))
-                return NotFound("Serial number is required.");
+            try
+            {
+                if (string.IsNullOrEmpty(SN))
+                    return NotFound("Serial number is required.");
 
-            var history = _UnitOfWork.maintenanceCards
-                .FindAll("Device.Product", "Device.Technician")
-                .Where(c => c.Device.SerialNumber == SN)
-                .OrderByDescending(c => c.ReceivedAt)
-                .ToList();
+                var history = _UnitOfWork.maintenanceCards
+                    .FindAll("Device.Product", "Device.Technician")
+                    .Where(c => c.Device.Product.Name == SN && c.Device.Department.Name == DepartmentId)
+                    .OrderByDescending(c => c.ReceivedAt)
+                    .ToList();
 
 
-            return View(history);
+                return View(history);
+            }
+            catch(Exception ex) {
+
+                TempData["Error"] = "Error when loading Device History.";
+                return RedirectToAction("Index");
+            }
+
         }
 
         [HttpGet]

@@ -35,7 +35,9 @@ namespace WorkShop.ViewModel
 
         // حالة الجهاز - يمكن تعيينها تلقائياً أو يدوياً حسب الحاجة
         public string Status { get; set; } = MaintenanceStatus.New.ToString();
-
+        // جديد: قائمة الأعطال السابقة
+        public IEnumerable<SelectListItem>? ErrorKeywords { get; set; }
         public string FaultDescription { get; set; }
+        public string? ErrorKeyword { get; set; }
     }
 }

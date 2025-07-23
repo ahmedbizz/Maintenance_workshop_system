@@ -32,6 +32,8 @@ public class Device
     // العلاقة مع المنتج
     public int ProductId { get; set; }
     public Product? Product { get; set; }
+    
+    public string? ErrorKeyword { get; set; }
     public string FaultDescription { get; set; }
     public string Status { get; set; } // New, UnderRepair, WaitingParts, SentBack, etc.
 
