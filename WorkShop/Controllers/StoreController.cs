@@ -283,7 +283,7 @@ namespace WorkShop.Controllers
                     if (product == null || product.quantity < item.Quantity)
                     {
                         TempData["Error"] = "Parts not available in store";
-                        return RedirectToAction("PendingDeliveries");
+                        return RedirectToAction("PendingDeliveries", "Store");
 
                     }
 
@@ -297,7 +297,9 @@ namespace WorkShop.Controllers
                 var device = _unitOfWork.devices.FindById(request.DeviceId);
                 if (device == null)
                 {
-                    return NotFound("Device not found.");
+                  
+                    TempData["Error"] = "Device not found.";
+                    return RedirectToAction("PendingDeliveries", "Store");
                 }
 
                 var engnieers = await _userManager.GetUsersInRoleAsync(Roles.Engineer);
@@ -348,11 +350,11 @@ namespace WorkShop.Controllers
 
                 TempData["Success"] = "Spare Parts Disbursement successfully";
 
-                return RedirectToAction("PendingDeliveries");
+                return RedirectToAction("PendingDeliveries", "Store");
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error in PendingDeliveries method");
                 TempData["Error"] = "Can't loading Error hapen.";
-                return RedirectToAction("Index");
+                return RedirectToAction("PendingDeliveries", "Store");
             }
             
  

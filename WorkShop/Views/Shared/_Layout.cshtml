@@ -8,6 +8,7 @@
     var currentUser = UserManager.GetUserAsync(User).Result;
     var notifications = new List<Notification>();
     int unreadCount = 0;
+    string displayName = "";
 
     if (currentUser != null)
     {
@@ -17,12 +18,20 @@
             .ToList();
 
         unreadCount = notifications.Count;
-    }
 
-    string displayName = currentUser?.FullName?.Length > 15
-        ? currentUser.FullName.Substring(0, 15) + "..."
-        : currentUser?.FullName;
+        if (!string.IsNullOrEmpty(currentUser.FullName))
+        {
+            displayName = currentUser.FullName.Length > 15
+                ? currentUser.FullName.Substring(0, 15) + "..."
+                : currentUser.FullName;
+        }
+        else
+        {
+            displayName = "User";
+        }
+    }
 }
+
 
 <!DOCTYPE html>
 <html lang="en">

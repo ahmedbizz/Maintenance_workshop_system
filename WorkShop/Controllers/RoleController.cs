@@ -53,7 +53,7 @@ namespace WorkShop.Controllers
                     ModelState.AddModelError(string.Empty, "Error creating role.");
                     return PartialView("_CreateRole", model);
                 }
-                TempData["Success"] = $"New Role Created Successfully";
+                TempData["Success"] = "New Role Created Successfully";
                 return RedirectToAction("ListRole");
             }
             catch (Exception ex)

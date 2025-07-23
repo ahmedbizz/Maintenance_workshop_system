@@ -15,14 +15,14 @@ namespace WorkShop.Models
         public string Notes { get; set; }
         public string Status { get; set; } // AwaitingTechnician, WaitingSparePart, InReview, Done
         public string? TechnicianReport { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public DateTime ReceivedAt { get; set; }              // وقت الاستلام
-        public DateTime? AssignedToTechnicianAt { get; set; } // وقت التحويل للفني
-        public DateTime? SparePartsRequestedAt { get; set; }  // وقت طلب قطع الغيار
-        public DateTime? ApprovedByEngineerAt { get; set; }   // وقت الموافقة من المهندس
-        public DateTime? RepairedAt { get; set; }             // وقت انتهاء الفني من الإصلاح
-        public DateTime? ClosedAt { get; set; }               // وقت الإغلاق النهائي
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public DateTime ReceivedAt { get; set; } = DateTime.Now;            // وقت الاستلام
+        public DateTime? AssignedToTechnicianAt { get; set; } = DateTime.Now; // وقت التحويل للفني
+        public DateTime? SparePartsRequestedAt { get; set; } = DateTime.Now; // وقت طلب قطع الغيار
+        public DateTime? ApprovedByEngineerAt { get; set; } = DateTime.Now;  // وقت الموافقة من المهندس
+        public DateTime? RepairedAt { get; set; } = DateTime.Now;           // وقت انتهاء الفني من الإصلاح
+        public DateTime? ClosedAt { get; set; } = DateTime.Now;           // وقت الإغلاق النهائي
 
 
     }

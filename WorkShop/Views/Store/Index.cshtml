@@ -140,26 +140,38 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal: General Message -->
-    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-sm">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <p id="modalMessage" class="fs-6 text-dark"></p>
-                </div>
+<!-- Modal: General Message -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-sm">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6 text-dark"></p>
             </div>
         </div>
     </div>
+</div>
+<div class="modal fade" id="messageSuccess" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="messageModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessageSuccess" class="fs-6 mb-0"></p>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- Scripts Section -->
 @section Scripts {
         <script>
-            $(document).ready(function () {
+         
                 // Show delete modal and inject product ID
                 $('.btnDelete').click(function (e) {
                     e.preventDefault();
@@ -181,21 +193,22 @@
             });
 
 
-                // Show error modal if error exists
-                const errorMessage = '@TempData["DeleteError"]';
-                if (errorMessage && errorMessage.trim() !== "") {
-                    new bootstrap.Modal(document.getElementById('errorModal')).show();
-                }
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"] ?? ""));
+            const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"] ?? ""));
 
-                // Show general message modal
-                const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
-                const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
-                const message = success || error;
-                if (message && message.trim() !== "") {
-                    $('#modalMessage').text(message);
-                    new bootstrap.Modal(document.getElementById('messageModal')).show();
-                }
-            });
+            if (error && error.trim() !== "") {
+                document.getElementById("modalMessage").textContent = error;
+                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                modal.show();
+            }
+
+            if (success && success.trim() !== "") {
+                document.getElementById("modalMessageSuccess").textContent = success;
+                const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+                modal.show();
+            }
+        });
         </script>
 }
 

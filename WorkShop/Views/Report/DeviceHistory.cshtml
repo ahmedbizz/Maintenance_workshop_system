@@ -3,7 +3,7 @@
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
 
-@model List<MaintenanceCard>
+@model List<Device>
 
 @{
     ViewData["Title"] = "Device History";
@@ -48,26 +48,26 @@
                             _ => "secondary"
                         };
 
-                        var workingDays = (item?.AssignedToTechnicianAt.HasValue == true)
-                        ? Math.Floor((DateTime.Now - item.AssignedToTechnicianAt.Value).TotalDays)
+                        var workingDays = (item?.MaintenanceCard.AssignedToTechnicianAt.HasValue == true)
+                        ? Math.Floor((DateTime.Now - item.MaintenanceCard.AssignedToTechnicianAt.Value).TotalDays)
                         : (double?)null;
                         var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), item.Status ?? "New");
-                        <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.Device.Status, departmentId = item.Device.DepartmentId })'" style="cursor:pointer;">
-                            <td>@item.Device.Product.Name</td>
-                            <td>@item.Device.SerialNumber</td>
+                        <tr onclick="window.location.href='@Url.Action("Index", "Device", new { status = item.Status, departmentId = item.DepartmentId })'" style="cursor:pointer;">
+                            <td>@item.Product.Name</td>
+                            <td>@item.SerialNumber</td>
                             <td>
                                 <span class="badge bg-@GetStatusColor(status) px-3 py-2 rounded-pill">
                                     @status.ToString()
                                 </span>
                             </td>
                             <td>
-                                @(string.IsNullOrWhiteSpace(item?.Device?.Technician?.FullName) ? "N/A" : item.Device.Technician.FullName)
+                                @(string.IsNullOrWhiteSpace(item?.Technician?.FullName) ? "N/A" : item.Technician.FullName)
                             </td>
-                            <td>@FormatDate(item.AssignedToTechnicianAt)</td>
+                            <td>@FormatDate(item.MaintenanceCard.AssignedToTechnicianAt)</td>
                             <td>
                                 @(workingDays.HasValue ? $"{workingDays.Value} day(s)" : "N/A")
                             </td>
-                            <td>@FormatDate(item.ReceivedAt)</td>
+                            <td>@FormatDate(item.MaintenanceCard.ReceivedAt)</td>
                         </tr>
                     }
                 </tbody>

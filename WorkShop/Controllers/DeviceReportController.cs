@@ -182,14 +182,24 @@ namespace WorkShop.Controllers
                 card.ClosedAt = DateTime.Now;
                 card.Status = MaintenanceStatus.Closed.ToString();
                 card.ClosedAt = DateTime.Now;
-                var usedPartsNames = selectedItems
-                    .Select(i =>
-                    {
-                        var product = _unitOfWork.products.FindById(i.ProductId);
-                        return product != null ? $"{product.Name} × {i.Quantity}" : $"ProductID: {i.ProductId} × {i.Quantity}";
-                    });
+                var usedPartsString = "No need";
 
-                var usedPartsString = usedPartsNames.Any() ? string.Join(", ", usedPartsNames) : "No need";
+                // إيجاد طلب الصرف المرتبط بالجهاز (وليس مُسلّم بعد)
+                var usedRequest = _unitOfWork.sparePartRequests
+                                    .FindAll("Items.Product") // تحميل العناصر مع المنتجات
+                                    .FirstOrDefault(r => r.DeviceId == model.DeviceId &&
+                                                         r.Status == MaintenanceStatus.Delivered.ToString());
+
+                if (usedRequest != null && usedRequest.Items != null && usedRequest.Items.Any())
+                {
+                    var partDescriptions = usedRequest.Items
+                        .Where(i => i.Product != null)
+                        .Select(i => $"{i.Product.Name} × {i.Quantity}")
+                        .ToList();
+
+                    usedPartsString = partDescriptions.Any() ? string.Join(", ", partDescriptions) : "No need";
+                }
+
 
 
                 var RepairReport = new RepairReport

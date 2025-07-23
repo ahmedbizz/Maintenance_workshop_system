@@ -16,7 +16,7 @@
         </button>
     </div>
 
-    <div class="table-responsive shadow-sm rounded">
+    <div class="table-responsive  rounded">
         <table class="table table-hover table-bordered align-middle text-center">
             <thead class="table-dark">
                 <tr>
@@ -38,16 +38,29 @@
     </div>
 </div>
 
-<!-- Message Modal -->
+<!-- Modal: General Message -->
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-sm">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6 text-dark"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="messageSuccess" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="messageModalLabel">Notification</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <p id="modalMessage" class="fs-6"></p>
+                <p id="modalMessageSuccess" class="fs-6 mb-0"></p>
             </div>
         </div>
     </div>
@@ -84,14 +97,20 @@
                 });
         });
 
-        $(document).ready(function () {
-            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
-            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+            // Show error modal if error exists
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]));
+            const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]));
 
-            let message = success || error;
-            if (message && message.trim() !== "") {
-                $('#modalMessage').text(message);
-                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            if (error && error.trim() !== "") {
+                document.getElementById("modalMessage").textContent = error;
+                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                modal.show();
+            }
+
+            if (success && success.trim() !== "") {
+                document.getElementById("modalMessageSuccess").textContent = success;
+                const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
                 modal.show();
             }
         });

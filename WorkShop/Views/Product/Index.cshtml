@@ -208,7 +208,7 @@
             const importModal =  new bootstrap.Modal(document.getElementById('ImportExcel'));
             importModal.show();
 
-                        $('#ImportExcel').on('hidden.bs.modal', function () {
+                    $('#ImportExcel').on('hidden.bs.modal', function () {
                     $('.modal-backdrop').remove();
                     $('body').removeClass('modal-open');
                     $('body').css('padding-right', '');
@@ -216,23 +216,23 @@
         });
 
 
-            // Show error modal if error exists
-        document.addEventListener("DOMContentLoaded", function () {
-            const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]));
-            const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]));
+       // Show error modal if error exists
+         document.addEventListener("DOMContentLoaded", function () {
+             const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"] ?? ""));
+             const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"] ?? ""));
 
-            if (error && error.trim() !== "") {
-                document.getElementById("modalMessage").textContent = error;
-                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
-                modal.show();
-            }
+             if (error && error.trim() !== "") {
+                 document.getElementById("modalMessage").textContent = error;
+                 const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                 modal.show();
+             }
 
-            if (success && success.trim() !== "") {
-                document.getElementById("modalMessageSuccess").textContent = success;
-                const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
-                modal.show();
-            }
-        });
+             if (success && success.trim() !== "") {
+                 document.getElementById("modalMessageSuccess").textContent = success;
+                 const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+                 modal.show();
+             }
+         });
     </script>
 }
 

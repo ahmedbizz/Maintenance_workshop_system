@@ -71,17 +71,17 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> DeviceHistory(string? SN,string? DepartmentId)
+        public async Task<IActionResult> DeviceHistory(string? SN,string? ProductName,string? DepartmentId)
         {
             try
             {
                 if (string.IsNullOrEmpty(SN))
                     return NotFound("Serial number is required.");
 
-                var history = _UnitOfWork.maintenanceCards
-                    .FindAll("Device.Product", "Device.Technician")
-                    .Where(c => c.Device.Product.Name == SN && c.Device.Department.Name == DepartmentId)
-                    .OrderByDescending(c => c.ReceivedAt)
+                var history = _UnitOfWork.devices
+                    .FindAll("Department", "Product", "MaintenanceCard", "Technician")
+                    .Where(c => c.SerialNumber == SN && c.Department.Name == DepartmentId && c.Product.Name == ProductName)
+                    .OrderByDescending(c => c.CreatedAt)
                     .ToList();
 
 
@@ -98,26 +98,35 @@ namespace WorkShop.Controllers
         [HttpGet]
         public async Task<IActionResult> UserMintenanceHistory(string? id)
         {
-            if (id == null)
-                return NotFound();
+            try
+            {
+                if (id == null)
+                    return NotFound();
 
 
-            var devices = _UnitOfWork.devices
-                            .FindAll("Department")
-                            .Where(d => d.TechnicianId == id)
-                            .ToList();
+                var devices = _UnitOfWork.devices
+                                .FindAll("Department")
+                                .Where(d => d.TechnicianId == id)
+                                .ToList();
 
 
-            var ticketCount = devices
-                            .GroupBy(d => d.Status)
-                            .Select(g => new ReportUserViewModel
-                            {
-                                userId = id,
-                                TiketStatus = g.Key,
-                                TiketNumber = g.Count()
-                            }).ToList();
+                var ticketCount = devices
+                                .GroupBy(d => d.Status)
+                                .Select(g => new ReportUserViewModel
+                                {
+                                    userId = id,
+                                    TiketStatus = g.Key,
+                                    TiketNumber = g.Count()
+                                }).ToList();
 
-            return View(ticketCount);
+                return View(ticketCount);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error when loading User History.";
+                return RedirectToAction("Index","User");
+            }
+
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -172,19 +181,21 @@ namespace WorkShop.Controllers
             {
                 bulkCopy.WriteToServer(table);
                 TempData["Success"] = "Import Successfully";
-            }
+                    return RedirectToAction("Index", "Product");
+                }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error :" + ex.Message;
-            }
+                TempData["Error"] = "Error :" + ex.Message.ToString();
+               return RedirectToAction("Index", "Product");
+                }
 
-            return RedirectToAction("Index", "Product");
+
 
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "❌ خطأ: " + ex.Message;
-                return RedirectToAction("Index");
+                return RedirectToAction("Index","Product");
             }
         
     }

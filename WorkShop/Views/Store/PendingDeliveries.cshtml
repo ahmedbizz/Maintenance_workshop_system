@@ -1,37 +1,35 @@
 ﻿@model List<SparePartRequest>
-
+@using System.Text.Json
 <div class="container mt-5" dir="ltr">
 
-    <!-- Alerts -->
-    @if (TempData["Massege"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show shadow" role="alert">
-            <strong>Notice:</strong> @TempData["Massege"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
-    <!-- Success Modal -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="modal fade" id="SuccessModal" tabindex="-1" aria-labelledby="SuccessModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content shadow">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title" id="SuccessModalLabel">Success</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        ✅ @TempData["Success"]
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
-                    </div>
+    <!-- Modal: General Message -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-sm">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p id="modalMessage" class="fs-6 text-dark"></p>
                 </div>
             </div>
         </div>
-    }
-
+    </div>
+    <div class="modal fade" id="messageSuccess" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="messageModalLabel">Notification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p id="modalMessageSuccess" class="fs-6 mb-0"></p>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Page Title -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-primary">Spare Parts Requests</h3>
@@ -108,11 +106,22 @@
             confirmModal.show();
         }
 
-        $(document).ready(function () {
-            const success = '@TempData["Success"]';
-            if (success && success.trim() !== '') {
-                const successModal = new bootstrap.Modal(document.getElementById('SuccessModal'));
-                successModal.show();
+
+            // Show error modal if error exists
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"] ?? ""));
+            const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"] ?? ""));
+
+            if (error && error.trim() !== "") {
+                document.getElementById("modalMessage").textContent = error;
+                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                modal.show();
+            }
+
+            if (success && success.trim() !== "") {
+                document.getElementById("modalMessageSuccess").textContent = success;
+                const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+                modal.show();
             }
         });
     </script>

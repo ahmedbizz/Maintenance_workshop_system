@@ -2,7 +2,7 @@
 @using WorkShop.Enums
 
 @{
- 
+    ViewData["Title"] = "My Devices";
 
     string GetStatusColor(MaintenanceStatus s) => s switch
     {
@@ -18,40 +18,58 @@
         _ => "secondary"
     };
 }
-@{
-    ViewData["Title"] = "My Devices";}
 
-    <h2 class="mb-4 text-primary"> Devices transferred to you </h2>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Name</th>
-            <th>S/N </th>
-            <th>Department</th>
-            <th> Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var device in Model)
-        {
-            var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus),device.Status ?? "New");
-            <tr>
-                <td>@device.Product?.Name</td>
-                <td>@device.SerialNumber</td>
-                <td>@device.Department?.Name</td>
-                <td>@device.FaultDate.ToShortDateString()</td>
-                <td>
-                    <span class="badge bg-@GetStatusColor(status) p-2">
-                        @status.ToString()
-                    </span>
-                </td>
-                <td>
-                        <a asp-action="DeviceDetails" asp-route-id="@device.Id" class="btn btn-sm btn-primary">Device Details </a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="container py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-hdd-stack-fill me-2"></i>Devices Transferred to You</h4>
+        </div>
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i> No devices transferred to you yet.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Device Name</th>
+                                <th>Serial Number</th>
+                                <th>Department</th>
+                                <th>Fault Date</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var device in Model)
+                            {
+                                var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
+                                <tr>
+                                    <td class="text-truncate">@device.Product?.Name</td>
+                                    <td>@device.SerialNumber</td>
+                                    <td>@device.Department?.Name</td>
+                                    <td>@device.FaultDate.ToShortDateString()</td>
+                                    <td>
+                                        <span class="badge bg-@GetStatusColor(status) px-3 py-2">
+                                            @status.ToString()
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-action="DeviceDetails" asp-route-id="@device.Id" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

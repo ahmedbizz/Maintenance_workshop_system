@@ -393,14 +393,12 @@ namespace WorkShop.Controllers
                 if (isEngineer)
                 {
                     // المهندس يشاهد الأجهزة في قسمه
-                    device = query.FirstOrDefault(d =>
-                       userDepartmentIds.Contains(d.DepartmentId) && d.Id == Id);
+                    device = query.FirstOrDefault(d => userDepartmentIds.Contains(d.DepartmentId) && d.Id == Id);
                 }
                 else
                 {
                     // الفني يشاهد فقط أجهزته
-                    device = query.FirstOrDefault(d =>
-                        d.TechnicianId == currentUser.Id && d.Id == Id);
+                    device = query.FirstOrDefault(d => d.TechnicianId == currentUser.Id && d.Id == Id);
                 }
 
                 if (device == null) return NotFound();
@@ -415,12 +413,12 @@ namespace WorkShop.Controllers
                 // استخراج الاقتراحات من RepairReports
                 var productId = device?.ProductId;
                 var suggestions = _unitOfWork.repairReports
-                    .FindAll("Device")
+                    .FindAll("Product")
                     .Where(r =>
-                        r.Device.ProductId == productId &&
-                        !string.IsNullOrWhiteSpace(device?.SelectedErrorKeyword) &&
+                        r.ProductId == productId &&
+                        !string.IsNullOrWhiteSpace(device?.ErrorKeyword) &&
                         !string.IsNullOrWhiteSpace(r.ErrorKeyword) &&
-                        r.ErrorKeyword.Contains(device.SelectedErrorKeyword) &&
+                        r.ErrorKeyword.Contains(device.ErrorKeyword) &&
                         !string.IsNullOrWhiteSpace(r.SuggestedFix)
                     )
                     .Select(r => r.SuggestedFix)

@@ -132,6 +132,7 @@ namespace WorkShop.Controllers
 
                         return View(user);
                     }
+                    TempData["Success"] = $"Created Successfully";
                 }
                 else
                 {
@@ -166,6 +167,7 @@ namespace WorkShop.Controllers
                             DepartmentId = depId
                         });
                     }
+                    TempData["Success"] = $"Update Successfully";
                 }
 
                 await _unitOfWork.CompleteAsync();
