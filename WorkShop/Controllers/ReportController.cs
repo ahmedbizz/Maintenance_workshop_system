@@ -14,7 +14,7 @@ using WorkShop.ViewModel;
 
 namespace WorkShop.Controllers
 {
-    [Authorize(Roles = Roles.Admin+","+Roles.Engineer)]
+    [Authorize(Roles = Roles.Admin+","+Roles.Engineer+"," + Roles.Technion)]
     public class ReportController : Controller
     {
         private readonly IUnitOfWork _UnitOfWork;
@@ -71,6 +71,7 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
+       
         public async Task<IActionResult> DeviceHistory(string? SN,string? ProductName,string? DepartmentId)
         {
             try
@@ -96,6 +97,7 @@ namespace WorkShop.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = Roles.Admin + "," + Roles.Engineer)]
         public async Task<IActionResult> UserMintenanceHistory(string? id)
         {
             try
@@ -130,7 +132,7 @@ namespace WorkShop.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-
+        [Authorize(Roles = Roles.Admin + "," + Roles.Engineer)]
         public async Task<IActionResult> ImportExcel(IFormFile file,string TableName)
         {
             try
@@ -159,7 +161,7 @@ namespace WorkShop.Controllers
             var result = reader.AsDataSet(conf);
             var table = result.Tables[0];
 
-
+          
             // مثال على الاتصال بقاعدة البيانات
             var connectionString = "server=DESKTOP-E8AEC1J\\WORKSHOP;user Id=sa;password=P@ssw0rd;database=Workshop;TrustServerCertificate=True";
 

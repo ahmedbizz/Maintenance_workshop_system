@@ -40,8 +40,10 @@
                                 <th>Device Name</th>
                                 <th>Serial Number</th>
                                 <th>Department</th>
+                                <th>Fault</th>
                                 <th>Fault Date</th>
                                 <th>Status</th>
+                                
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -53,6 +55,7 @@
                                     <td class="text-truncate">@device.Product?.Name</td>
                                     <td>@device.SerialNumber</td>
                                     <td>@device.Department?.Name</td>
+                                    <td>@device.ErrorKeyword</td>
                                     <td>@device.FaultDate.ToShortDateString()</td>
                                     <td>
                                         <span class="badge bg-@GetStatusColor(status) px-3 py-2">

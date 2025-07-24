@@ -5,6 +5,22 @@
 @using System.Text.Json
 
 <div class="container mt-4">
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="card shadow rounded-4">
         <div class="card-body">
             <div class="row mb-3 align-items-center">
@@ -191,6 +207,7 @@
         </div>
     </div>
 </div>
+
 <!-- Scripts Section -->
 @section Scripts {
     <script>
@@ -216,23 +233,30 @@
         });
 
 
-       // Show error modal if error exists
-         document.addEventListener("DOMContentLoaded", function () {
-             const success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"] ?? ""));
-             const error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"] ?? ""));
+            // Show error modal if error exists
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]));
+            const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]));
 
-             if (error && error.trim() !== "") {
-                 document.getElementById("modalMessage").textContent = error;
-                 const modal = new bootstrap.Modal(document.getElementById("messageModal"));
-                 modal.show();
-             }
+            if (error && error.trim() !== "") {
+                document.getElementById("modalMessage").textContent = error;
+                const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                modal.show();
+            }
 
-             if (success && success.trim() !== "") {
-                 document.getElementById("modalMessageSuccess").textContent = success;
-                 const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
-                 modal.show();
-             }
-         });
+            if (success && success.trim() !== "") {
+                document.getElementById("modalMessageSuccess").textContent = success;
+                const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+                modal.show();
+            }
+        });
+
+        $('#assignModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var deviceId = button.data('device-id');
+            $('#modalDeviceId').val(deviceId);
+        });
+
     </script>
 }
 

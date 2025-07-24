@@ -30,5 +30,6 @@ namespace WorkShop.ViewModel
         // جديد: لو أردت تعبئة الحقول لاحقًا
         public string? SelectedErrorKeyword { get; set; }
         public string? SuggestedFix { get; set; }
+   
     }
 }

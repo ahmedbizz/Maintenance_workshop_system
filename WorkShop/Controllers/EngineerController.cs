@@ -83,61 +83,77 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> ApproveParts(int Id)
         {
-            var engineer = await _userManager.GetUserAsync(User);
-            var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
-            var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
-            var device = _unitOfWork.devices.FindById(Id);
-            if (request == null || device == null || card == null) return NotFound();
-
-
-            request.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
-            request.ManagerId = engineer.Id;
-            card.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
-            card.ApprovedByEngineerAt = DateTime.Now;
-            card.EngineerId = engineer.Id;
-            device.Status = MaintenanceStatus.AwaitingOfficer.ToString();
-            await _unitOfWork.CompleteAsync();
-            // سجل الحدث
-            var LogTask = _logService.LogAsync(
-                device.Id,
-                "Spare Parts Approved",
-                $"Spare Parts Approved By Eng.{engineer.FullName.Substring(0, 10)}",
-                MaintenanceStatus.ApprovedByEngineer.ToString(),
-                card.TechnicianReport,
-                Roles.Engineer,
-                engineer.Id);
-
-            // إشعار الفني
-            var NotifyTecnition = _notificationService.NotifyUsersAsync(
-                  request.RequestedById,
-                  "Spare Parts Approved",
-                  $"Spare parts approved by Eng.{new string(engineer.FullName.Take(10).ToArray())} " +
-                  $"for device S/N: {request.Device.SerialNumber}",
-                   request.Device.Id
-                  );
-            var officers = await _userManager.GetUsersInRoleAsync("Officer");
-            var officer = officers
-                .FirstOrDefault(u => u.UserDepartments.Any(u => u.DepartmentId == request.Device.DepartmentId));
-            Task NotifyOfficer;
-            if (officer != null)
+            try
             {
-                NotifyOfficer = _notificationService.NotifyUsersAsync(
-                      officer.Id,
-                      "Spare Parts Request",
+                var engineer = await _userManager.Users
+                    .Include(u => u.UserDepartments)
+                    .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+                    
+                var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
+                var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
+                var device = _unitOfWork.devices.FindById(Id);
+                if (request == null || device == null || card == null)
+                {
+                    TempData["Error"] = "An error occurred while loading the page.";
+                    return RedirectToAction("Index","Device");
+                
+                } 
+
+
+                request.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
+                request.ManagerId = engineer.Id;
+                card.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
+                card.ApprovedByEngineerAt = DateTime.Now;
+                card.EngineerId = engineer.Id;
+                device.Status = MaintenanceStatus.AwaitingOfficer.ToString();
+                await _unitOfWork.CompleteAsync();
+                // سجل الحدث
+                var LogTask = _logService.LogAsync(
+                    device.Id,
+                    "Spare Parts Approved",
+                    $"Spare Parts Approved By Eng.{new string(engineer.FullName.Take(10).ToArray())}",
+                    MaintenanceStatus.ApprovedByEngineer.ToString(),
+                    card.TechnicianReport,
+                    Roles.Engineer,
+                    engineer.Id);
+
+                // إشعار الفني
+                var NotifyTecnition = _notificationService.NotifyUsersAsync(
+                      request.RequestedById,
+                      "Spare Parts Approved",
                       $"Spare parts approved by Eng.{new string(engineer.FullName.Take(10).ToArray())} " +
-                      $"for device S/N: {request.Device.SerialNumber}" +
-                      $"wating Officer approval",
-                      request.Device.Id
+                      $"for device S/N: {request.Device.SerialNumber}",
+                       request.Device.Id
                       );
-            }
-            else
-            {
-                NotifyOfficer = Task.CompletedTask;
-            }
-            await Task.WhenAll(LogTask, NotifyTecnition, NotifyOfficer);
-    
+                var officersForRole = await _userManager.GetUsersInRoleAsync("Officer");
+                var officers = _unitOfWork.users.FindAll("UserDepartments")
+                    .Where(u => officersForRole.Any(Ou => Ou.Id == u.Id));
+                var officer = officers
+                    .FirstOrDefault(u => u.UserDepartments.Any(d => d.DepartmentId == request.Device.DepartmentId));
 
-            return RedirectToAction("ReviewPartsRequests");
+                if (officer != null)
+                {
+                    await _notificationService.NotifyUsersAsync(
+                        officer.Id,
+                        "Spare Parts Request",
+                        $"Spare parts approved by Eng. {new string(engineer.FullName.Take(10).ToArray())}\n" +
+                        $"For device S/N: {request.Device.SerialNumber}\n" +
+                        $"Waiting for officer approval.",
+                        request.Device.Id
+                    );
+                }
+
+                await Task.WhenAll(LogTask, NotifyTecnition);
+
+                TempData["Success"] = "Spare parts approved Successfully";
+                return RedirectToAction("ReviewPartsRequests");
+            }
+            catch (Exception ex) {
+
+                TempData["Error"] = "An error occurred while loading the page.";
+                return RedirectToAction("Index","Device");
+
+            }
 
 
         }
@@ -146,41 +162,49 @@ namespace WorkShop.Controllers
         [Authorize(Roles = Roles.Engineer)]
         public async Task<IActionResult> RejectParts(int Id)
         {
-            var engineer = await _userManager.GetUserAsync(User);
-            var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
-            var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
-            var device = _unitOfWork.devices.FindById(Id);
-            if (request == null || device == null || card == null) return NotFound();
+            try
+            {
+                var engineer = await _userManager.GetUserAsync(User);
+                var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
+                var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
+                var device = _unitOfWork.devices.FindById(Id);
+                if (request == null || device == null || card == null) return NotFound();
 
 
-            request.Status = MaintenanceStatus.RejectedByEngineer.ToString();
-            request.ManagerId = engineer.Id;
-            card.Status = MaintenanceStatus.RejectedByEngineer.ToString();
-            card.EngineerId = engineer.Id;
-            device.Status = MaintenanceStatus.AwaitingEngineer.ToString();
-            await _unitOfWork.CompleteAsync();
-            // سجل الحدث
-            var LogTask = _logService.LogAsync(
-                device.Id,
-                "Spare Parts rejected",
-                $"Spare Parts rejected By Eng.{new string(engineer.FullName.Take(10).ToArray())}",
-                MaintenanceStatus.RejectedByEngineer.ToString(),
-                card.TechnicianReport,
-                Roles.Engineer,
-                engineer.Id);
+                request.Status = MaintenanceStatus.RejectedByEngineer.ToString();
+                request.ManagerId = engineer.Id;
+                card.Status = MaintenanceStatus.RejectedByEngineer.ToString();
+                card.EngineerId = engineer.Id;
+                device.Status = MaintenanceStatus.AwaitingEngineer.ToString();
+                await _unitOfWork.CompleteAsync();
+                // سجل الحدث
+                var LogTask = _logService.LogAsync(
+                    device.Id,
+                    "Spare Parts rejected",
+                    $"Spare Parts rejected By Eng.{new string(engineer.FullName.Take(10).ToArray())}",
+                    MaintenanceStatus.RejectedByEngineer.ToString(),
+                    card.TechnicianReport,
+                    Roles.Engineer,
+                    engineer.Id);
 
-            // إشعار الفني
-            var NotifyTecnition = _notificationService.NotifyUsersAsync(
-                  request.RequestedById,
-                  "Spare Parts rejected",
-                  $"Spare parts rejected by Eng..{new string(engineer.FullName.Take(10).ToArray())} " +
-                  $"for device S/N: {request.Device.SerialNumber}",
-                   request.Device.Id
-                  );
-            await Task.WhenAll(LogTask, NotifyTecnition);
+                // إشعار الفني
+                var NotifyTecnition = _notificationService.NotifyUsersAsync(
+                      request.RequestedById,
+                      "Spare Parts rejected",
+                      $"Spare parts rejected by Eng..{new string(engineer.FullName.Take(10).ToArray())} " +
+                      $"for device S/N: {request.Device.SerialNumber}",
+                       request.Device.Id
+                      );
+                await Task.WhenAll(LogTask, NotifyTecnition);
 
 
-            return RedirectToAction("ReviewPartsRequests");
+                return RedirectToAction("ReviewPartsRequests");
+            } catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while loading the page.";
+                return RedirectToAction("ReviewPartsRequests");
+            }
+
         }
 
     }

@@ -185,21 +185,34 @@
                     </div>
                 </div>
 
-                <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content shadow-lg rounded-4 border-0">
-                            <div class="modal-header bg-info text-white rounded-top-4">
-                                <h5 class="modal-title fw-bold" id="messageModalLabel">
-                                    <i class="bi bi-info-circle me-2"></i>Message
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body text-center py-4">
-                                <p id="modalMessage" class="fs-5 text-secondary fw-semibold"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<!-- Modal: General Message -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-sm">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messageModalLabel">ℹ️ Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessage" class="fs-6 text-dark"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="messageSuccess" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="messageModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="modalMessageSuccess" class="fs-6 mb-0"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -265,17 +278,30 @@
             }
         });
 
-    $(document).ready(function () {
-            var success = @Html.Raw(JsonSerializer.Serialize(TempData["Success"]));
-            var error = @Html.Raw(JsonSerializer.Serialize(TempData["Error"]));
+          // Show error modal if error exists
+            document.addEventListener("DOMContentLoaded", function () {
+                const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]));
+                const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]));
 
-            let message = success || error;
-            if (message && message.trim() !== "") {
-                $('#modalMessage').text(message);
-                var modal = new bootstrap.Modal(document.getElementById('messageModal'));
-                modal.show();
-            }
-        });
+                if (error && error.trim() !== "") {
+                    document.getElementById("modalMessage").textContent = error;
+                    const modal = new bootstrap.Modal(document.getElementById("messageModal"));
+                    modal.show();
+                }
+
+                if (success && success.trim() !== "") {
+                    document.getElementById("modalMessageSuccess").textContent = success;
+                    const modal = new bootstrap.Modal(document.getElementById("messageSuccess"));
+                    modal.show();
+                }
+            });
+
+            $('#assignModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var deviceId = button.data('device-id');
+                $('#modalDeviceId').val(deviceId);
+            });
+
 
     </script>
 }

@@ -64,12 +64,14 @@
     <h4>Suggestions for Repair</h4>
     @if (Model.Suggestions?.Any() == true)
     {
-        <ul>
+        <h6>@Model.ErrorKeyword</h6>
+        <div>
             @foreach (var suggestion in Model.Suggestions)
             {
-                <li>@suggestion</li>
+                @Html.Raw(suggestion.Replace("\n", "<br/>"))
+                <hr />
             }
-        </ul>
+        </div>
     }
     else
     {

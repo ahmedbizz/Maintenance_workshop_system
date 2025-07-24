@@ -197,8 +197,7 @@ namespace WorkShop.Controllers
                     .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
                 
                 if (user == null)
-                {
-                 
+                {      
                     TempData["Error"] = "Can't loade this page Access Denied.";
                     return RedirectToAction("Index");
                 }
@@ -282,7 +281,8 @@ namespace WorkShop.Controllers
                     CreatedAt = DateTime.Now,
                     Status = "New",
                     FaultDescription = model.FaultDescription,
-                    SelectedErrorKeyword = model.SelectedErrorKeyword
+                    SelectedErrorKeyword = model.SelectedErrorKeyword,
+                    ErrorKeyword = string.IsNullOrWhiteSpace(model.SelectedErrorKeyword) ? null : model.SelectedErrorKeyword
                 };
                 await _unitOfWork.devices.AddAsync(device);
                 await _unitOfWork.CompleteAsync();
@@ -316,8 +316,8 @@ namespace WorkShop.Controllers
                        );
 
                 await Task.WhenAll(LogTask, NotifyTecnition);
-
-                return RedirectToAction("Index");
+                TempData["Success"] = "Tekit Create Successfully";
+                return RedirectToAction("AddDevice");
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Index method");
@@ -367,7 +367,7 @@ namespace WorkShop.Controllers
             try
             {
                 var currentUser = await _userManager.GetUserAsync(User);
-                var isEngineer = await _userManager.IsInRoleAsync(currentUser, "Engineer");
+                var isEngineer = await _userManager.IsInRoleAsync(currentUser,Roles.Engineer);
 
                 var userDepartmentIds = _unitOfWork.UserDepartments
                    .FindAll()
@@ -387,7 +387,11 @@ namespace WorkShop.Controllers
                         "RepairReports" // أضف هذا هنا فقط
                     );
 
-                if (query == null) return NotFound();
+                if (query == null)
+                {
+                    TempData["Error"] = "An error occurred that stopped the process. Please try again.";
+                    return RedirectToAction("Index");
+                }
 
                 Device device;
                 if (isEngineer)
@@ -401,7 +405,11 @@ namespace WorkShop.Controllers
                     device = query.FirstOrDefault(d => d.TechnicianId == currentUser.Id && d.Id == Id);
                 }
 
-                if (device == null) return NotFound();
+                if (device == null)
+                {
+                    TempData["Error"] = "An error occurred that stopped the process. Please try again.";
+                    return RedirectToAction("Index");
+                }
 
                 var spareRequest = device.SparePartRequests.SelectMany(r => r.Items).ToList();
 
@@ -421,8 +429,21 @@ namespace WorkShop.Controllers
                         r.ErrorKeyword.Contains(device.ErrorKeyword) &&
                         !string.IsNullOrWhiteSpace(r.SuggestedFix)
                     )
-                    .Select(r => r.SuggestedFix)
+                    .Select(r =>
+                    {
+                        var partsList = r.UsedParts?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(p => p.Trim())
+                                                    .ToList();
+
+                        var formattedParts = partsList != null && partsList.Any()
+                            ? string.Join("\n- ", partsList.Prepend("")) // يبدأ بسطر جديد ثم يضيف علامة - قبل كل جزء
+                            : "None";
+
+                        return $"🔧 Suggested Fix:\n{r.SuggestedFix}\n🧩 Used Parts:{formattedParts}";
+                    })
                     .ToList();
+
+
 
                 var viewModel = new DeviceDetailsViewModel
                 {

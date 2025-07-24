@@ -126,6 +126,7 @@ namespace WorkShop.Controllers
                 {
                     department.UpdateAt = DateTime.Now;
                     _unitOfWork.departments.Insert(department);
+                    TempData["Success"] = "Create Successfully";
                     return Json(new { success = true });
                 }
 
@@ -160,6 +161,7 @@ namespace WorkShop.Controllers
                 {
                     department.UpdateAt = DateTime.Now;
                     _unitOfWork.departments.Update(department);
+                    TempData["Success"] = "Update Successfully";
                     return Json(new { success = true });
                 }
 
@@ -178,8 +180,9 @@ namespace WorkShop.Controllers
         public IActionResult Delete_Department(int? Id)
         {
             try { 
-            _unitOfWork.departments.Delete(Id);
-            return RedirectToAction("Index");
+                _unitOfWork.departments.Delete(Id);
+                TempData["Success"] = "Create Successfully";
+                return RedirectToAction("Index");
                                     }
             catch (DbUpdateException dbEx)
             {
