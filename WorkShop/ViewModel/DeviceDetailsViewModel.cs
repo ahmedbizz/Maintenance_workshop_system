@@ -7,13 +7,17 @@ namespace WorkShop.ViewModel
     {
         public int DeviceId { get; set; }
         public string? ProductName { get; set; }
+        public string? TechnicianName { get; set; }
+        public string? EngineerName { get; set; }
+        public string? managerName { get; set; }
         public string? SerialNumber { get; set; }
         public string? DepartmentName { get; set; }
-        public DateTime FaultDate { get; set; }
+        public DateTime FaultDate { get; set; } = DateTime.Now;
         public string? TechnicianReport { get; set; } = "";
         public bool RequestSpareParts { get; set; }
         public bool IsRepaired { get; set; }
         public string DeviceStatus { get; set; } = "";
+        public string FromLocation { get; set; } = "";
         public string? ErrorKeyword { get; set; }
         public string? SuggestedFix { get; set; }
         public int ProductId { get; set; }

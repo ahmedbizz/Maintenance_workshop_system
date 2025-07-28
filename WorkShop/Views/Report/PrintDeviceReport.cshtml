@@ -1,0 +1,158 @@
+﻿@model WorkShop.ViewModel.DeviceDetailsViewModel
+@using WorkShop.Enums
+@{
+    ViewData["Title"] = "Device Maintenance Report";
+
+    var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), Model.DeviceStatus ?? "Pending");
+
+    string GetStatusColor(MaintenanceStatus s) => s switch
+    {
+        MaintenanceStatus.Pending => "secondary",
+        MaintenanceStatus.AwaitingEngineer => "warning",
+        MaintenanceStatus.ApprovedByEngineer => "primary",
+        MaintenanceStatus.AwaitingOfficer => "info",
+        MaintenanceStatus.ApprovedByOfficer => "success",
+        MaintenanceStatus.RejectedByEngineer => "danger",
+        MaintenanceStatus.RejectedByOfficer => "danger",
+        MaintenanceStatus.Repaired => "success",
+        MaintenanceStatus.Closed => "dark",
+        _ => "secondary"
+    };
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+    }
+
+    .report-header {
+        border-bottom: 2px solid #ccc;
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+        position: relative;
+    }
+
+        .report-header img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 80px;
+        }
+
+    h2.report-title {
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .report-section {
+        padding: 20px;
+        background-color: #fdfdfd;
+        border-radius: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    dt {
+        font-weight: bold;
+    }
+
+    .badge {
+        font-size: 1rem;
+        padding: 0.5em 1em;
+    }
+
+    table th, table td {
+        vertical-align: middle !important;
+        text-align: center;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="report-header">
+        <img src="~/images/logo.jpg" alt="Logo" />
+        <h2 class="report-title">تقرير صيانة الجهاز</h2>
+    </div>
+
+    <div class="report-section">
+        <dl class="row">
+            <dt class="col-sm-3">اسم الجهاز:</dt>
+            <dd class="col-sm-3">@Model.ProductName</dd>
+
+            <dt class="col-sm-3">الحالة:</dt>
+            <dd class="col-sm-3">
+                <span class="badge bg-@GetStatusColor(status)">@status.ToString()</span>
+            </dd>
+        </dl>
+
+        <dl class="row">
+            <dt class="col-sm-3">الرقم التسلسلي:</dt>
+            <dd class="col-sm-9">@Model.SerialNumber</dd>
+
+            <dt class="col-sm-3">القسم:</dt>
+            <dd class="col-sm-9">@Model.DepartmentName</dd>
+        </dl>
+
+        <dl class="row">
+            <dt class="col-sm-3">تاريخ العطل:</dt>
+            <dd class="col-sm-9">@Model.FaultDate.ToString("yyyy-MM-dd")</dd>
+
+            <dt class="col-sm-3">تقرير الفني:</dt>
+            <dd class="col-sm-9">@Model.TechnicianReport</dd>
+        </dl>
+
+        @if (Model.SparePartRequest?.Items?.Any() == true)
+        {
+            <h3 class="text-center mt-5 mb-3">تفاصيل قطع الغيار المطلوبة</h3>
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>القطعة</th>
+                        
+                        <th>الكمية</th>
+                        <th>تم التأكيد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.SparePartRequest.Items)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                           
+                            <td>@item.Quantity</td>
+                            <td>@(Model.SparePartRequest.IsFinalized ? "نعم" : "لا")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>الضابط المسؤل</th>
+
+                    <th>مهندس الصيانة</th>
+                    <th>فني الصيانة </th>
+                </tr>
+            </thead>
+            <tbody>
+
+                    <tr>
+                        <td>@Model.managerName</td>
+                        <td>@Model.EngineerName</td>
+                        <td>@Model.TechnicianName</td>
+            
+                    </tr>
+
+                <tr>
+                    <td><br></td>
+                    <td><br></td>
+                    <td><br></td>
+
+                </tr>
+               
+            </tbody>
+        </table>
+    </div>
+</div>

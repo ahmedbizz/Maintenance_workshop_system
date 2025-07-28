@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using NuGet.Configuration;
 using NuGet.Packaging.Signing;
+using Rotativa.AspNetCore;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -454,6 +455,7 @@ namespace WorkShop.Controllers
                     FaultDate = device.FaultDate,
                     TechnicianReport = device.MaintenanceCard?.TechnicianReport ?? "",
                     DeviceStatus = device.MaintenanceCard?.Status ?? "Null",
+                    FromLocation = device.FromLocation,
                     Suggestions = suggestions, // أضف هذا الحقل إلى ViewModel
                     SparePartRequest = new SparePartRequestViewModel
                     {

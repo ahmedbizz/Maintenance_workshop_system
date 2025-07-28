@@ -79,6 +79,9 @@ namespace WorkShop.Migrations
                     b.Property<string>("TechnicianId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("managerId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
@@ -88,6 +91,8 @@ namespace WorkShop.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("TechnicianId");
+
+                    b.HasIndex("managerId");
 
                     b.ToTable("device");
                 });
@@ -881,6 +886,11 @@ namespace WorkShop.Migrations
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("WorkShop.Models.User", "manager")
+                        .WithMany()
+                        .HasForeignKey("managerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Department");
 
                     b.Navigation("Engineer");
@@ -888,6 +898,8 @@ namespace WorkShop.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Technician");
+
+                    b.Navigation("manager");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

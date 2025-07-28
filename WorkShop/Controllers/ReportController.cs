@@ -1,11 +1,15 @@
 ﻿using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using NuGet.Packaging.Signing;
+using Rotativa.AspNetCore;
 using System.Data;
 using System.Text;
+using System.Threading.Tasks;
 using WorkShop.Enums;
 using WorkShop.Models;
 using WorkShop.Repository;
@@ -18,8 +22,10 @@ namespace WorkShop.Controllers
     public class ReportController : Controller
     {
         private readonly IUnitOfWork _UnitOfWork;
-        public ReportController(IUnitOfWork UnitOfWork) {
+        private readonly UserManager<User> _userManager;
+        public ReportController(IUnitOfWork UnitOfWork, UserManager<User> userManager) {
             _UnitOfWork = UnitOfWork;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -202,6 +208,97 @@ namespace WorkShop.Controllers
         
     }
 
+        //======================================= Print Report =========================
+
+        public async Task<IActionResult> PrintDeviceReport(int id)
+        {
+            try
+            {
+                var device = _UnitOfWork.devices.FindAll(
+                    "Product",
+                    "Department",
+                    "SparePartRequests",
+                    "Technician",
+                    "Engineer",
+                    "manager",
+                    "MaintenanceCard"// التصحيح هنا من SparePartRequests إلى SparePartRequest
+)
+                    .FirstOrDefault(d => d.Id == id);
+
+                   
+                if (device == null)
+                {
+                    TempData["Error"] = "Can't Print this page  Error hapen.";
+                    return RedirectToAction("Index");
+                }
+
+
+
+
+                var sparePart = _UnitOfWork.sparePartRequests.FindAll("Items", "Items.Product")
+                    .FirstOrDefault(s => s.DeviceId == id);
+                var viewModel = new DeviceDetailsViewModel { };
+                if (sparePart != null)
+                {
+                    viewModel = new DeviceDetailsViewModel
+                    {
+                        FaultDate = device.CreatedAt,
+                        ProductName = device.Product?.Name,
+                        SerialNumber = device.SerialNumber,
+                        DeviceStatus = device.Status,
+                        DepartmentName = device.Department?.Name ?? "Unknown",
+                        TechnicianReport = device.MaintenanceCard.TechnicianReport ?? string.Empty,
+                        FromLocation = device.FromLocation,
+                        TechnicianName = device.Technician?.FullName ?? "Unknown",
+                        EngineerName = device.Engineer?.FullName ?? "Unknown",
+                        managerName = device.manager?.FullName ?? "Unknown",
+
+                        SparePartRequest = new SparePartRequestViewModel
+                        {
+                            IsFinalized = sparePart?.IsFinalized ?? false,
+                            Items = sparePart.Items.Select(i => new SparePartItemViewModel
+                            {
+                                Id = i.Id,
+                                ProductName = i.Product.Name,
+                                Quantity = i.Quantity,
+                                StoreId = i.StoreId
+                            }).ToList()
+                        }
+                    };
+                }
+                else
+                {
+                    viewModel = new DeviceDetailsViewModel
+                    {
+                        FaultDate = device.CreatedAt,
+                        ProductName = device.Product?.Name,
+                        SerialNumber = device.SerialNumber,
+                        DeviceStatus = device.Status,
+                        DepartmentName = device.Department?.Name ?? "Unknown",
+                        TechnicianReport = device.MaintenanceCard.TechnicianReport ?? string.Empty,
+                        FromLocation = device.FromLocation,
+                        TechnicianName = device.Technician.FullName,
+                        EngineerName = device.Engineer.FullName,
+                        managerName = device.manager?.FullName ?? "Unknown",
+
+                    };
+                }
+                   
+
+
+                return new ViewAsPdf("PrintDeviceReport", viewModel)
+                {
+                    FileName = $"DeviceReport_{device.SerialNumber}.pdf",
+                    PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                    PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait
+                };
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Can't Print this page  Error hapen.{ex.Message}";
+                return RedirectToAction("Index");
+            }
 
         }
+    }
     }

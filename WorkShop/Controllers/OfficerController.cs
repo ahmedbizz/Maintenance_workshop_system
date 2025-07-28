@@ -74,6 +74,7 @@ namespace WorkShop.Controllers
 
 
                 device.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
+                device.managerId = Officer.Id;
                 request.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
                 request.ManagerId = Officer.Id;
                 card.Status = MaintenanceStatus.ApprovedByOfficer.ToString();
@@ -137,16 +138,18 @@ namespace WorkShop.Controllers
         {
             try
             {
+                var Officer = await _userManager.GetUserAsync(User);
                 var device = _unitOfWork.devices.FindById(Id);
                 var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == Id);
                 var request = _unitOfWork.sparePartRequests.FindAll("Items").FirstOrDefault(r => r.DeviceId == Id);
                 if (device == null || card == null || request == null) return NotFound();
 
                 device.Status = MaintenanceStatus.RejectedByOfficer.ToString();
+                device.managerId = Officer.Id;
                 request.Status = MaintenanceStatus.RejectedByOfficer.ToString();
                 card.Status = MaintenanceStatus.RejectedByOfficer.ToString();
                 await _unitOfWork.CompleteAsync();
-                var Officer = await _userManager.GetUserAsync(User);
+           
                 // سجل الحدث
                 var LogTask = _logService.LogAsync(
                     device.Id,

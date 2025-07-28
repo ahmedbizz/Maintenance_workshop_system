@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Rotativa.AspNetCore;
 using System.Globalization;
 using WorkShop.Context;
 using WorkShop.Enums;
@@ -75,6 +76,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Rotativa configuration
+RotativaConfiguration.Setup("wwwroot", "Rotativa");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

@@ -20,6 +20,10 @@ public class Device
     [Required]
     public string EngineerId { get; set; }
     public User? Engineer { get; set; }
+
+    public string? managerId { get; set; }
+    public User? manager { get; set; }
+
     public string? SelectedErrorKeyword { get; set; }
 
     [Required]

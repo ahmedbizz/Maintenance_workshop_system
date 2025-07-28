@@ -105,6 +105,7 @@ namespace WorkShop.Controllers
                 card.Status = MaintenanceStatus.ApprovedByEngineer.ToString();
                 card.ApprovedByEngineerAt = DateTime.Now;
                 card.EngineerId = engineer.Id;
+                device.EngineerId = engineer.Id;
                 device.Status = MaintenanceStatus.AwaitingOfficer.ToString();
                 await _unitOfWork.CompleteAsync();
                 // سجل الحدث
@@ -176,6 +177,7 @@ namespace WorkShop.Controllers
                 card.Status = MaintenanceStatus.RejectedByEngineer.ToString();
                 card.EngineerId = engineer.Id;
                 device.Status = MaintenanceStatus.AwaitingEngineer.ToString();
+                device.EngineerId = engineer.Id;
                 await _unitOfWork.CompleteAsync();
                 // سجل الحدث
                 var LogTask = _logService.LogAsync(
