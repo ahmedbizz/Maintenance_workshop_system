@@ -13,6 +13,7 @@
         MaintenanceStatus.ApprovedByOfficer => "success",
         MaintenanceStatus.RejectedByEngineer => "danger",
         MaintenanceStatus.RejectedByOfficer => "danger",
+        MaintenanceStatus.Destruction => "danger",
         MaintenanceStatus.Repaired => "success",
         MaintenanceStatus.Closed => "dark",
         _ => "secondary"
@@ -90,7 +91,7 @@
                 <textarea asp-for="TechnicianReport" class="form-control" rows="3"></textarea>
             </div>
 
-            @if (status is not MaintenanceStatus.NeedsParts)
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.Sent ))
             {
                 <div class="form-check form-switch">
                     <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
@@ -98,7 +99,7 @@
                 </div>
             }
 
-            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
             {
                 <div class="form-check form-switch mt-2">
                     <input asp-for="RequestSpareParts" class="form-check-input" id="toggleSpareParts" />
@@ -120,7 +121,7 @@
             <div id="sparePartsSection" class="mt-4">
                 <h5>Requested Spare Parts</h5>
 
-                @if (Model.SparePartRequest.Items?.Any() == true)
+                @if (Model.SparePartRequest.Items.Any() != null)
                 {
                     <table class="table" id="partsTable">
                         <thead class="table-dark">
@@ -128,7 +129,7 @@
                                 <th>Part</th>
                                 <th>Warehouse</th>
                                 <th>Quantity</th>
-                                @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
                                 {
                                     <th>Action</th>
                                 }
@@ -140,7 +141,7 @@
                                 var item = Model.SparePartRequest.Items[i];
                                 <tr>
                                     <td>
-                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
                                         {
                                             <select name="SparePartRequest.Items[@i].ProductId" class="form-select">
                                                 @foreach (var product in Model.Products)
@@ -155,7 +156,7 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
                                         {
                                             <select name="SparePartRequest.Items[@i].StoreId" class="form-select">
                                                 @foreach (var store in item.AvailableStores ?? new List<SelectListItem>())
@@ -170,7 +171,7 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                        @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
                                         {
                                             <input type="number" name="SparePartRequest.Items[@i].Quantity" class="form-control" value="@item.Quantity" min="1" />
                                         }
@@ -179,7 +180,7 @@
                                             @item.Quantity
                                         }
                                     </td>
-                                    @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer))
+                                    @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
                                     {
                                         <td>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete(@item.Id, @Model.DeviceId)">

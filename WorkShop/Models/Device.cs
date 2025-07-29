@@ -13,8 +13,6 @@ public class Device
     public string FromLocation { get; set; }
     [Required]
     public DateTime FaultDate { get; set; } = DateTime.Now;
-
-
     public string? TechnicianId { get; set; }
     public User? Technician { get; set; }
     [Required]
@@ -42,6 +40,7 @@ public class Device
     public string Status { get; set; } // New, UnderRepair, WaitingParts, SentBack, etc.
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+ 
 
     // علاقة One-to-One مع كرت الصيانة الحالي
     public MaintenanceCard MaintenanceCard { get; set; }

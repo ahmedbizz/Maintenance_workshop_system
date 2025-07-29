@@ -25,14 +25,9 @@
 
 
 <div class="container my-4">
-
-          
-                <div class="card-header  text-primary text-center ">
-                        <h3 class="mb-0"><i class="bi bi-tools"></i> Maintenance devices</h3>
-                </div>
-                <div class="card-body">
+    <div class="card-body">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
-                         <h3 class="text-primary fw-bold fs-5 text-uppercase mb-0"><i class="bi bi-arrow-down-up"></i>Devices</h3>
+            <h3 class="mb-0"><i class="bi bi-tools"></i> Maintenance devices</h3>
 
                         <form class="d-flex gap-2" method="get">
                             <input class="form-control" type="search" name="searchTerm" placeholder="Search" value="@Model.searchTerm" />
@@ -56,11 +51,12 @@
         <div class="table-responsive rounded shadow-sm">
             <table class="table  table-hover align-middle mb-0">
                 <thead class="table-dark text-center">
-                                <tr>
+                                <tr><th>#</th>
                         <th><i class="bi bi-cpu"></i></th>
                                     <th>Device</th>
                                     <th>S/N</th>
                                     <th>Department</th>
+                                    <th>FaultDate</th>
                                     <th>Fault</th>
                                     <th>Technician</th>
                                     <th>Status</th>
@@ -72,10 +68,14 @@
                                 {
                                     var status = (MaintenanceStatus)Enum.Parse(typeof(MaintenanceStatus), device.Status ?? "New");
                                     <tr>
+                            <td>@device.Id</td>
                                         <td><img src="~/images/@device.Product?.imagePath" style="width:50px;height:50px" class="shadow rounded-circle" /></td>
-                                        <td>@device.Product?.Name</td>
+                          
+                            <td>@(device.Product?.Name != null ? new string(device.Product.Name.Take(20).ToArray()) : "")</td>
+                          
                                         <td>@device.SerialNumber</td>
                                         <td>@device.Department?.Name</td>
+                                        <td>@device.FaultDate.ToString("yyyy-MM-dd")</td>
                                         <td>@device.ErrorKeyword</td>
                                         <td>@device.Technician?.FullName</td>
                                         <td>
@@ -96,6 +96,16 @@
                                                     Assign
                                                 </button>
                                             }
+                                @if (User.IsInRole("Engineer") && device.Status == MaintenanceStatus.Repaired.ToString())
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#SendModal"
+                                            data-device-id="@device.Id">
+                                        <i class="bi bi-send"></i>
+                                        Send
+                                    </button>
+                                }
                                 <a href="@Url.Action("PrintDeviceReport", "Report", new { id = device.Id })" class="btn btn-sm btn-outline-primary" target="_blank">
                                     <i class="bi bi-printer"></i> Print
                                 </a>
@@ -258,6 +268,38 @@
 </div>
 
 
+<!-- Modal to Send Device to <!-- #region name -->
+<div class="modal fade" id="SendModal" tabindex="-1" aria-labelledby="SendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-action="SendDevice" asp-controller="Device">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="SendModalLabel">Send Device to Region</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" name="DeviceId" id="modalSendDeviceId" />
+
+                    <div class="mb-3">
+                    <p>Are you suer wont to send this device ?</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-send"></i>Send</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- #endregion --> -->
+
+
 
 
 @section Scripts {
@@ -297,6 +339,12 @@
             var button = $(event.relatedTarget);
             var deviceId = button.data('device-id');
             $('#modalDeviceId').val(deviceId);
+        });
+
+        $('#SendModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var deviceId = button.data('device-id');
+            $('#modalSendDeviceId').val(deviceId);
         });
 
     </script>

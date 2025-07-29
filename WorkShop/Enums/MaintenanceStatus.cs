@@ -2,11 +2,11 @@
 {
     public enum MaintenanceStatus
     {
-        New,
-        Pending,
-        AwaitingTechnician,
-        AwaitingEngineer,
-        ApprovedByEngineer,
+            New,
+            Pending,
+            AwaitingTechnician,
+            AwaitingEngineer,
+            ApprovedByEngineer,
             RejectedByEngineer,
             AwaitingOfficer,
             ApprovedByOfficer,
@@ -14,9 +14,13 @@
             NeedsParts,
             UnderDiagnosis,
             UnderRepair,
-        Received, AssignedToEngineer, InRepair,
+            Received,
+            AssignedToEngineer,
+            InRepair,
             Repaired,
-        Delivered,
-            Closed
+            Delivered,
+            Destruction,
+            Closed,
+            Sent
     }
 }

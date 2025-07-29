@@ -767,7 +767,60 @@ namespace WorkShop.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.Engineer)]
+        public async Task<IActionResult> SendDevice(int? DeviceId)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var device = _unitOfWork.devices.FindById(DeviceId);
+                var card = _unitOfWork.maintenanceCards.FindAll().FirstOrDefault(c => c.DeviceId == DeviceId);
+                if (device == null || card == null || user == null)
+                {
+                    TempData["Error"] = "Can't loade this page Send  Error hapen.";
+                    return RedirectToAction("Index");
+                }
 
+                device.Status = MaintenanceStatus.Sent.ToString();
+                card.Status = MaintenanceStatus.Sent.ToString();
+                await _unitOfWork.CompleteAsync();
+                // سجل الحدث
+                var LogTask = _logService.LogAsync(
+                    device.Id,
+                    "Sent",
+                    $"Device Sent by {new string(user.FullName.Take(10).ToArray())}",
+                    MaintenanceStatus.Closed.ToString(),
+                    card.TechnicianReport,
+                    Roles.Technion,
+                    user.Id);
+
+                // Notefanction Engineer
+                var NotifiyEngineer = _notificationService.NotifyUsersAsync(
+                         device.EngineerId,
+                        "Sent",
+                        $"Device Sent by {new string(user.FullName.Take(10).ToArray())}",
+                        device.Id
+                      );
+
+                // Notefanction Officer
+                var NotifyOfficer = _notificationService.NotifyUsersAsync(
+                         device.managerId,
+                        "Sent",
+                        $"Device Sent by {new string(user.FullName.Take(10).ToArray())}",
+                        device.Id
+                      );
+                await Task.WhenAll(LogTask, NotifiyEngineer, NotifyOfficer);
+                TempData["Success"] = "Sent successfully";
+                return RedirectToAction("Index");
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error in assign method");
+                TempData["Error"] = "Can't loade this page Send  Error hapen.";
+                return RedirectToAction("Index");
+            }
+
+        }
 
     }//end Main method 
 
