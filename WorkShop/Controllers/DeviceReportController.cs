@@ -29,77 +29,25 @@ namespace WorkShop.Controllers
             _notificationService = notificationService;
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.Technion)]
-        public async Task<IActionResult> SubmitReport(DeviceDetailsViewModel model)
+
+        private async Task HandleSparePartsRequest(DeviceDetailsViewModel model, Device device, MaintenanceCard card, User user)
         {
-            try
-            {
-                var user = await _userManager.Users
-                  .Include(u => u.UserDepartments)
-                  .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
-                if (user == null)
-                {
-                    TempData["Error"] = "Access Denied";
-                    return RedirectToAction("Index");
-                }
-                var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
-                var device = _unitOfWork.devices
-                    .FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product")
-                    .FirstOrDefault(d => d.Id == model.DeviceId);
-                if (device == null)
-                {
-                    TempData["Error"] = "Error hapen will loade this page.";
-                    return RedirectToAction("Index");
-                }
 
-
-
-
-                var OfficersFromRole = await _userManager.GetUsersInRoleAsync(Roles.Officer);
-                var OfficersIds = OfficersFromRole.Select(t => t.Id).ToList();
-
-                var Officer = _unitOfWork.users
-                    .FindAll("UserDepartments.Department")
-                    .FirstOrDefault(u =>
-                        OfficersIds.Contains(u.Id) &&
-                        u.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId))
-                    );
-
-
-                var card = _unitOfWork.maintenanceCards
-                    .FindAll()
-                    .FirstOrDefault(c => c.DeviceId == device.Id);
-                if (card == null)
-                {
-                    TempData["Error"] = "Error hapen will loade this page.";
-                    return RedirectToAction("Index");
-                }
-
-                // تقرير الفني
-                card.TechnicianReport = string.IsNullOrWhiteSpace(model.TechnicianReport) ? " " : model.TechnicianReport;
-                card.UpdatedAt = DateTime.Now;
-
+            try {
                 // تجهيز قائمة القطع المختارة
-                var selectedItems = model.SparePartRequest?.Items ?? new List<SparePartItemViewModel>();
-                bool hasParts = model.RequestSpareParts && selectedItems.Any(i => i.Quantity > 0);
+                var selectedItems = model.SparePartRequest?.Items;
 
-                if (model.RequestSpareParts &&
-                     model.SparePartRequest.Items != null &&
-                     model.SparePartRequest.Items.Any(i => i.Quantity > 0))
+                if (model.RequestSpareParts && model.SparePartRequest != null && model.SparePartRequest.Items.Any(i => i.Quantity > 0))
                 {
 
                     // هل يوجد طلب سابق؟
                     var existingRequest = _unitOfWork.sparePartRequests
-                        .FindAll("Items")
-                        .FirstOrDefault(r => r.DeviceId == model.DeviceId &&
-                                                r.Status != MaintenanceStatus.Delivered.ToString());
+                     .FindAll("Items")
+                     .FirstOrDefault(r => r.DeviceId == model.DeviceId && r.Status != MaintenanceStatus.Delivered.ToString());
 
-                    if (existingRequest != null)
+                    if (existingRequest != null && selectedItems !=null)
                     {
-                        if (existingRequest.Items == null)
-                            existingRequest.Items = new List<SparePartItem>();
+
 
                         var modelProductIds = selectedItems.Select(i => i.ProductId).ToHashSet();
 
@@ -126,32 +74,35 @@ namespace WorkShop.Controllers
                                 existingRequest.Items.Add(new SparePartItem
                                 {
                                     ProductId = item.ProductId,
-                                    Quantity = item.Quantity
-                                    ,
+                                    Quantity = item.Quantity,
                                     StoreId = item.StoreId
                                 });
                         }
                     }
                     else
                     {
-                        // إنشاء طلب جديد
-                        var newRequest = new SparePartRequest
+                        if(selectedItems != null)
                         {
-                            DeviceId = model.DeviceId,
-                            RequestDate = DateTime.Now,
-                            RequestedById = user.Id,
-                            Status = MaintenanceStatus.Pending.ToString(),
-                            Items = selectedItems
-                                .Where(i => i.Quantity > 0)
-                                .Select(i => new SparePartItem
-                                {
-                                    ProductId = i.ProductId,
-                                    Quantity = i.Quantity,
-                                    StoreId = i.StoreId,
-                                }).ToList()
-                        };
-
-                        await _unitOfWork.sparePartRequests.AddAsync(newRequest);
+                            // إنشاء طلب جديد
+                            var newRequest = new SparePartRequest
+                            {
+                                DeviceId = model.DeviceId,
+                                RequestDate = DateTime.Now,
+                                RequestedById = user.Id,
+                                Status = MaintenanceStatus.Pending.ToString(),
+                                Items = selectedItems
+                                                        .Where(i => i.Quantity > 0)
+                                                        .Select(i => new SparePartItem
+                                                        {
+                                                            ProductId = i.ProductId,
+                                                            Quantity = i.Quantity,
+                                                            StoreId = i.StoreId,
+                                                        }).ToList()
+                            };
+                            await _unitOfWork.sparePartRequests.AddAsync(newRequest);
+                        }
+                        else { TempData["Error"] = "No spare parts were selected."; }
+           
                     }
 
                     // تحديث الحالة
@@ -166,7 +117,7 @@ namespace WorkShop.Controllers
                         "Spare Parts Request",
                         $"Spare Parts Requested By {new string(user.FullName.Take(10).ToArray())}",
                         MaintenanceStatus.AwaitingEngineer.ToString(),
-                        card.TechnicianReport,
+                        card.TechnicianReport??"N/A",
                         Roles.Technion,
                         user.Id);
 
@@ -179,16 +130,75 @@ namespace WorkShop.Controllers
                           );
 
                     await Task.WhenAll(LogTask, NotifyEngineer);
-
-
-
                     await _unitOfWork.CompleteAsync();
-
                 }
 
 
+
+
+            }
+            catch (Exception ex) {
+                TempData["Error"] = "An error occurred while processing your request.";
+            }
+        }
+
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.Technion)]
+        public async Task<IActionResult> SubmitReport(DeviceDetailsViewModel model)
+        {
+            try
+            {
+                var user = await _userManager.Users
+                  .Include(u => u.UserDepartments)
+                  .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+
+               
+                if (user == null)
+                {
+                    TempData["Error"] = "Access Denied";
+                    return RedirectToAction("Index");
+                }
+                var userDepartmentIds = user.UserDepartments.Select(ud => ud.DepartmentId).ToList();
+                var device = _unitOfWork.devices
+                    .FindAll("Product", "Department", "Technician", "MaintenanceCard", "SparePartRequests.Items.Product")
+                    .FirstOrDefault(d => d.Id == model.DeviceId);
+                if (device == null)
+                {
+                    TempData["Error"] = "Error hapen will loade this page.";
+                    return RedirectToAction("Index");
+                }
+
+                var OfficersFromRole = await _userManager.GetUsersInRoleAsync(Roles.Officer);
+                var OfficersIds = OfficersFromRole.Select(t => t.Id).ToList();
+                var Officer = _unitOfWork.users
+                    .FindAll("UserDepartments.Department")
+                    .FirstOrDefault(u =>
+                        OfficersIds.Contains(u.Id) &&
+                        u.UserDepartments.Any(ud => userDepartmentIds.Contains(ud.DepartmentId))
+                    );
+
+
+                var card = _unitOfWork.maintenanceCards
+                    .FindAll()
+                    .FirstOrDefault(c => c.DeviceId == device.Id);
+                if (card == null)
+                {
+                    TempData["Error"] = "Error hapen will loade this page.";
+                    return RedirectToAction("Index");
+                }
+
+                // تقرير الفني
+                card.TechnicianReport = string.IsNullOrWhiteSpace(model.TechnicianReport) ? " " : model.TechnicianReport;
+                card.UpdatedAt = DateTime.Now;
+                if (model.RequestSpareParts) { await HandleSparePartsRequest(model, device, card, user); }
+              
+
                 // في حال تم الإصلاح بدون قطع
-                if (model.IsRepaired && !hasParts)
+                if (model.IsRepaired)
                 {
                     var existingRequest = _unitOfWork.sparePartRequests
                         .FindAll("Items")
@@ -203,7 +213,6 @@ namespace WorkShop.Controllers
                     device.Status = MaintenanceStatus.Repaired.ToString();
                     card.ClosedAt = DateTime.Now;
                     card.Status = MaintenanceStatus.Closed.ToString();
-                    card.ClosedAt = DateTime.Now;
                     var usedPartsString = "No need";
 
                     // إيجاد طلب الصرف المرتبط بالجهاز (وليس مُسلّم بعد)
@@ -255,22 +264,25 @@ namespace WorkShop.Controllers
                             $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
                              model.DeviceId
                           );
-
+                    var tasks = new List<Task> { LogTask, NotifiyEngineer };
                     // Notefanction Officer
-                    var NotifyOfficer = _notificationService.NotifyUsersAsync(
+                    if (Officer != null)
+                    {
+                        var NotifyOfficer = _notificationService.NotifyUsersAsync(
                              Officer.Id,
                             "Repaired",
                             $"Device repaired by {new string(user.FullName.Take(10).ToArray())}",
                              model.DeviceId
                           );
+                        tasks.Add(NotifyOfficer);
+                    }
 
+                    await Task.WhenAll(tasks);
 
-
-                    await Task.WhenAll(LogTask, NotifiyEngineer, NotifyOfficer);
 
                 }
 
-
+                await _unitOfWork.CompleteAsync();
                 return RedirectToAction("DeviceDetails", "Device", new { id = model.DeviceId });
             }
             catch (Exception ex) {

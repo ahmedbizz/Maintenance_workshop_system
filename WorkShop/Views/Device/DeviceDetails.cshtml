@@ -20,7 +20,7 @@
     };
 }
 
-<div class="container mt-4" dir="ltr">
+<div class="container mt-4 card shadow p-4 rounded-3" dir="ltr">
     @if (TempData["Massege"] != null)
     {
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -28,60 +28,92 @@
             <button type="button" class="btn-close float-start" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="text-primary"><i class="bi bi-geo-alt text-danger"></i>  @Model.FromLocation</h4>
+        </div>
+        <div>
+            <h4><i class="bi bi-clock-history"></i> @Model.FaultDate</h4>
+        </div>
+   
 
-    <h2 class="text-primary">Device Coming From @Model.FromLocation</h2>
+    </div>
     <hr />
-
-    <dl class="row">
-        <dt class="col-sm-2">Device:</dt>
-        <dd class="col-sm-4">@Model.ProductName</dd>
-
-        <dt class="col-sm-2">Status:</dt>
-        <dd class="col-sm-4">
-            <span class="badge bg-@GetStatusColor(status) p-2">@status</span>
-        </dd>
-
-        <dt class="col-sm-2">Serial Number:</dt>
-        <dd class="col-sm-4">@Model.SerialNumber</dd>
-
-        <dt class="col-sm-2">Department:</dt>
-        <dd class="col-sm-4">@Model.DepartmentName</dd>
-
-        <dt class="col-sm-2">Fault Date:</dt>
-        <dd class="col-sm-4">@Model.FaultDate</dd>
-
-        <dt class="col-sm-2">Report:</dt>
-        <dd class="col-sm-10">@Model.TechnicianReport</dd>
-
-        <dd class="col-sm-12 mt-2">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <h5 class="col-sm-2">Device:</h5>
+            <span class="col-sm-3">@Model.ProductName</span>
+        </div>
+        <div class="col-md-4">
+            <h5 class="col-sm-2">Status:</h5>
+            <span class="badge bg-@GetStatusColor(status)  p-2 ">@status</span>
+        </div>
+        <div class="col-md-3">
             <a asp-action="DeviceHistory" asp-controller="Report" asp-route-SN="@Model.SerialNumber" asp-route-ProductName="@Model.ProductName" asp-route-DepartmentId="@Model.DepartmentName" class="btn btn-outline-info">
                 View Maintenance History
             </a>
-        </dd>
-    </dl>
+        </div>
 
-    <hr />
+        <div class="col-md-5">
+            <h5 class="col-sm-2">S/N:</h5>
+            <span class="col-sm-3">@Model.SerialNumber</span>
+        </div>
 
-    <h4>Suggestions for Repair</h4>
-    @if (Model.Suggestions?.Any() == true)
-    {
-        <h6>@Model.ErrorKeyword</h6>
-        <div>
-            @foreach (var suggestion in Model.Suggestions)
+        <div class="col-md-5">
+            <h5 class="col-sm-3">Department:</h5>
+            <h5 class="text-info  col-sm-2">@Model.DepartmentName</h5>
+        </div>
+
+        </div>
+
+    <hr/>
+
+
+    <div class="row g-3">
+        <div class="col-md-5">
+            <h4><i class="bi bi-lightbulb text-warning"></i> Suggestions for Repair</h4>
+        </div>
+        <div class="col-md-12">
+            @if (Model.Suggestions?.Any() == true)
             {
-                @Html.Raw(suggestion.Replace("\n", "<br/>"))
-                <hr />
+                <h5 class="text-info">@Model.ErrorKeyword</h5>
+                <div>
+                    @foreach (var suggestion in Model.Suggestions)
+                    {
+                        @Html.Raw(suggestion.Replace("\n", "<br/>"))
+                        <hr />
+                    }
+                </div>
+            }
+            else
+            {
+                <p>No suggestions available.</p>
             }
         </div>
-    }
-    else
-    {
-        <p>No suggestions available.</p>
-    }
+        </div>
+    <hr/>
+    <div class="row g-3">
+        <div class="col-md-5">
+            <h4><i class="bi bi-file-earmark-text"></i> Technician Report</h4>
+        </div>
+        <div class="col-md-12">
+            @if (Model.TechnicianReport != null)
+            {
+                <p class="text-body">@Model.TechnicianReport</p>
 
-    @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed))
+            }
+            else
+            {
+                <p>No suggestions available.</p>
+            }
+        </div>
+    </div>
+       <hr/>
+
+
+    @if (status is not (MaintenanceStatus.Repaired or MaintenanceStatus.Closed or MaintenanceStatus.Sent))
     {
-        <form asp-action="SubmitReport" asp-controller="DeviceReport" method="post">
+        <form asp-action="SubmitReport" asp-controller="DeviceReport" class="card shadow p-4 rounded-3" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="DeviceId" />
             <input type="hidden" asp-for="SerialNumber" />
@@ -91,7 +123,7 @@
                 <textarea asp-for="TechnicianReport" class="form-control" rows="3"></textarea>
             </div>
 
-            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.Sent ))
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.Sent or MaintenanceStatus.Destruction ))
             {
                 <div class="form-check form-switch">
                     <input asp-for="IsRepaired" class="form-check-input" id="CheckRepaired" />
@@ -99,7 +131,7 @@
                 </div>
             }
 
-            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent))
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent or MaintenanceStatus.Destruction))
             {
                 <div class="form-check form-switch mt-2">
                     <input asp-for="RequestSpareParts" class="form-check-input" id="toggleSpareParts" />
@@ -117,11 +149,12 @@
                     <textarea name="SuggestedFix" class="form-control" rows="3"></textarea>
                 </div>
             </div>
-
+            @if (status is not (MaintenanceStatus.NeedsParts or MaintenanceStatus.ApprovedByEngineer or MaintenanceStatus.ApprovedByOfficer or MaintenanceStatus.Sent or MaintenanceStatus.Destruction))
+            {
             <div id="sparePartsSection" class="mt-4">
                 <h5>Requested Spare Parts</h5>
 
-                @if (Model.SparePartRequest.Items.Any() != null)
+                @if (Model.SparePartRequest.Items.Any())
                 {
                     <table class="table" id="partsTable">
                         <thead class="table-dark">
@@ -202,7 +235,7 @@
                     <i class="bi bi-plus-circle"></i> Add Part
                 </button>
             </div>
-
+            }
             <div class="mt-4">
                 <button type="submit" class="btn btn-success">
                     <i class="bi bi-save"></i> Save Report
@@ -210,10 +243,11 @@
             </div>
         </form>
     }
-    else
+
+  @if (Model.SparePartRequest.Items.Any() && Model.SparePartRequest.Items.Any(i => i.Id != 0 && i.Quantity > 0))
     {
         <div class="mt-4">
-            <h5>Parts Requested</h5>
+            <h5><i class="bi bi-clipboard-check"></i>  Parts Requested</h5>
             <table class="table">
                 <thead class="table-dark">
                     <tr>
@@ -233,7 +267,9 @@
                     }
                 </tbody>
             </table>
-            <p class="text-danger text-center">Editing this report is not allowed.</p>
+            <p class="text-danger text-center">Editing this report is not allowed.
+              
+            </p>
         </div>
     }
 
